@@ -71,7 +71,15 @@
   (define lbs (* mass 2.2))
   (define whole-lbs (inexact->exact (truncate lbs)))
   (define whole-oz (inexact->exact (truncate (* 16 (- lbs whole-lbs)))))
-  (list whole-lbs whole-oz))
+  (cond
+    [(and (equal? whole-lbs 1) (equal? whole-oz 1))
+     (list whole-lbs 'pound whole-oz 'ounce)]
+    [(equal? whole-lbs 1)
+     (list whole-lbs 'pound whole-oz 'ounces)]
+    [(equal? whole-oz 1)
+     (list whole-lbs 'pounds whole-oz 'ounce)]
+    [else
+     (list whole-lbs 'pounds whole-oz 'ounces)]))
     
 ; ********************************************************
 ; ** problem 2 ** (4 points)

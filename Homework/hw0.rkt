@@ -1,4 +1,4 @@
-c#lang racket
+#lang racket
 
 (provide hours
 	 kg2lb
@@ -36,7 +36,7 @@ c#lang racket
 ; 3.14159.  You will receive no credit for this problem if you leave
 ; the number as 0.
 
-(define hours 3)
+(define hours 5)
 
 ; ********************************************************
 ; ** problem 1 ** (5 points)
@@ -101,7 +101,7 @@ c#lang racket
 ; tested automatically, and will be called only with no arguments.
 
 (define (timezone)
-  empty)
+  "EST")
 
 ; ********************************************************
 ; ** problem 3 ** (10 points)

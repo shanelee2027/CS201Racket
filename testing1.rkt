@@ -1,19 +1,12 @@
 #lang racket
-(define a (list 'A))
-(cons 4 a)
-(define (hex-digit-to-int n)
-    (if (number? n)
-        n
-        (cond
-          [(equal? n 'A)
-           10]
-          [(equal? n 'B)
-           11]
-          [(equal? n 'C)
-           12]
-          [(equal? n 'D)
-           13]
-          [(equal? n 'E)
-           14]
-          [(equal? n 'F)
-           15])))
+(define a (list 1 2 3 4))
+
+(define (pie)
+  3)
+
+(define pie2 (pie))
+
+(define (power-set lst)
+  (define smaller-power-set (power-set (remove (car lst) lst)))
+  4)
+

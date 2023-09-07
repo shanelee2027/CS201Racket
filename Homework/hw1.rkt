@@ -233,7 +233,13 @@
 ; (Replace empty below with your procedure.)
 
 (define (myassq value alist)
-  empty)
+  (cond
+    [(equal? alist null)
+     null]
+    [(equal? (car (car alist)) value)
+     (car alist)]
+    [else
+     (myassq value (remove (car alist) alist))]))
 
 ; ********************************************************
 ; ** problem 4 ** (10 points)
@@ -268,7 +274,15 @@
 
 
 (define (sorted? lst . compare?)
-  empty)
+  (if (<= (length lst) 1)
+      #t
+      (begin (if (empty? compare?)
+                  (set! compare? <=)
+                  (set! compare? (car compare?)))
+             (if (compare? (car lst) (list-ref lst 1))
+                  (sorted? (remove (car lst) lst) compare?)
+                  #f))))
+
 ;; or
 ; (define (sorted? lst [compare? <=])
 ;   empty)
@@ -303,7 +317,11 @@
 ; (Replace this comment with your procedure(s).)
 
 (define (inflate lst [value 1])
-  empty)
+  (define (increment num)
+    (if (number? num)
+        (+ num value)
+        num))
+  (map increment lst))
 
 ; ********************************************************
 ; ** problem 6 ** (10 points)
@@ -335,7 +353,9 @@
 ; (Replace this comment with your procedure(s).)
 
 (define (iterate start proc n)
-  empty)
+  (if (equal? n 0)
+      empty
+      (cons (proc start) (iterate (proc start) proc (- n 1)))))
 
 ; ********************************************************
 ; ** problem 7 ** (15 points)
@@ -382,7 +402,9 @@
 ; (Replace this comment with your procedure(s).)
 
 (define (compound start proc test)
-  empty)
+  (if (test start)
+      empty
+      (cons (proc start) (compound (proc start) proc test))))
 
 ; ********************************************************
 ; ** problem 8 (15 points)
@@ -422,7 +444,12 @@
 
 
 (define (power-set lst)
-  empty)
+  (cond
+    [(equal? (length lst) 0)
+     (list (list ))]
+    [else
+     (define smaller-power-set (power-set (remove (car lst) lst)))
+     (append smaller-power-set (map cons (build-list (length smaller-power-set) (lambda (x) (car lst))) smaller-power-set))]))
 
 ; ********************************************************
 ; ** problem 9 (10 points)
@@ -480,7 +507,10 @@
 ; (Replace this comment with your procedure(s).)
 
 (define (all-factors n)
-  empty)
+  (define primes-power-set (power-set (prime-factors n)))
+  (define (multiply-all lst) (foldl * 1 lst))
+  (sort (remove-duplicates (map multiply-all primes-power-set)) <))
+
     
 
 ; ********************************************************

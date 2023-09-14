@@ -74,7 +74,7 @@
 ; of hours you spent doing this assignment Decimal numbers (eg, 6.237)
 ; are fine.  Exclude time spent reading.
 
-(define hours 0)
+(define hours 4)
 
 ; ********************************************************
 ; ** problem 1 ** (9 points)
@@ -110,10 +110,21 @@
 ; ********************************************************
 
 (define (bin2dec num)
-  empty)
+  (cond
+    [(equal? num (list )) ; check if list is empty
+     0]
+    [else
+     (define exponent (length num))
+     (define (subtract-one-and-power constant) ; subtracts one from the exponent variable, then raises 2^exponent, adds that power if the currrent digit is 1
+      (set! exponent (- exponent 1))
+      (* constant (expt 2 exponent)))
+     (apply + (map subtract-one-and-power num))
+     ]))
 
 (define (dec2bin n)
-  empty)
+  (if (< n 2)
+      (list n)
+      (append (dec2bin (quotient n 2)) (list (modulo n 2)))))
 
 ; ********************************************************
 ; ** problem 2 ** (10 points)
@@ -155,10 +166,42 @@
 ; ********************************************************
 
 (define (hex2dec num)
-  empty)
+  (define (hex-digit-to-int n)
+    (if (number? n)
+        n
+        (cond
+          [(or (equal? n 'A) (equal? n 'a))
+           10]
+          [(or (equal? n 'B) (equal? n 'b))
+           11]
+          [(or (equal? n 'C) (equal? n 'c))
+           12]
+          [(or (equal? n 'D) (equal? n 'd))
+           13]
+          [(or (equal? n 'E) (equal? n 'e))
+           14]
+          [(or (equal? n 'F) (equal? n 'f))
+           15])))
+  (cond
+    [(equal? num (list ))
+     0]
+    [else
+     (define exponent (length num))
+     (define (subtract-one-and-power constant) 
+      (set! exponent (- exponent 1))
+      (* (hex-digit-to-int constant) (expt 16 exponent)))
+     (apply + (map subtract-one-and-power num))]))
+
 
 (define (dec2hex n)
-  empty)
+  (define char-digits (list 'A 'B 'C 'D 'E 'F))
+  (define (int-to-hex-digit n)
+    (if (< n 10)
+        n
+        (list-ref char-digits (- n 10))))
+  (if (< n 16)
+      (list (int-to-hex-digit n))
+      (append (dec2hex (quotient n 16)) (list (int-to-hex-digit (modulo n 16))))))
 
 ; ********************************************************
 ; ** problem 3 ** (10 points)
@@ -190,7 +233,13 @@
 ; (Replace empty below with your procedure.)
 
 (define (myassq value alist)
-  empty)
+  (cond
+    [(equal? alist null)
+     null]
+    [(equal? (car (car alist)) value)
+     (car alist)]
+    [else
+     (myassq value (remove (car alist) alist))]))
 
 ; ********************************************************
 ; ** problem 4 ** (10 points)
@@ -225,7 +274,15 @@
 
 
 (define (sorted? lst . compare?)
-  empty)
+  (if (<= (length lst) 1)
+      #t
+      (begin (if (empty? compare?)
+                  (set! compare? <=)
+                  (set! compare? (car compare?)))
+             (if (compare? (car lst) (list-ref lst 1))
+                  (sorted? (remove (car lst) lst) compare?)
+                  #f))))
+
 ;; or
 ; (define (sorted? lst [compare? <=])
 ;   empty)
@@ -260,7 +317,11 @@
 ; (Replace this comment with your procedure(s).)
 
 (define (inflate lst [value 1])
-  empty)
+  (define (increment num)
+    (if (number? num)
+        (+ num value)
+        num))
+  (map increment lst))
 
 ; ********************************************************
 ; ** problem 6 ** (10 points)
@@ -292,7 +353,9 @@
 ; (Replace this comment with your procedure(s).)
 
 (define (iterate start proc n)
-  empty)
+  (if (equal? n 0)
+      empty
+      (cons (proc start) (iterate (proc start) proc (- n 1)))))
 
 ; ********************************************************
 ; ** problem 7 ** (15 points)
@@ -339,7 +402,9 @@
 ; (Replace this comment with your procedure(s).)
 
 (define (compound start proc test)
-  empty)
+  (if (test start)
+      empty
+      (cons (proc start) (compound (proc start) proc test))))
 
 ; ********************************************************
 ; ** problem 8 (15 points)
@@ -379,7 +444,12 @@
 
 
 (define (power-set lst)
-  empty)
+  (cond
+    [(equal? (length lst) 0)
+     (list (list ))]
+    [else
+     (define smaller-power-set (power-set (remove (car lst) lst)))
+     (append smaller-power-set (map cons (build-list (length smaller-power-set) (lambda (x) (car lst))) smaller-power-set))]))
 
 ; ********************************************************
 ; ** problem 9 (10 points)
@@ -437,7 +507,10 @@
 ; (Replace this comment with your procedure(s).)
 
 (define (all-factors n)
-  empty)
+  (define primes-power-set (power-set (prime-factors n)))
+  (define (multiply-all lst) (foldl * 1 lst))
+  (sort (remove-duplicates (map multiply-all primes-power-set)) <))
+
     
 
 ; ********************************************************

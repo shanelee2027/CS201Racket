@@ -111,11 +111,13 @@
 
 (define (bin2dec num)
   (cond
-    [(equal? num (list )) ; check if list is empty
+    [(equal? num (list ))
      0]
     [else
      (define exponent (length num))
-     (define (subtract-one-and-power constant) ; subtracts one from the exponent variable, then raises 2^exponent, adds that power if the currrent digit is 1
+     ; subtracts one from the exponent variable, then raises 2^exponent, adds that power if the currrent digit is 1
+     ; ex: if exponent = 5, then (subtract-one-and-power 1) would add 32
+     (define (subtract-one-and-power constant) 
       (set! exponent (- exponent 1))
       (* constant (expt 2 exponent)))
      (apply + (map subtract-one-and-power num))
@@ -166,6 +168,8 @@
 ; ********************************************************
 
 (define (hex2dec num)
+  ; converts a hexadecimal digit to a number
+  ; ex: 8 -> 8, A -> 10, F -> 15
   (define (hex-digit-to-int n)
     (if (number? n)
         n
@@ -195,6 +199,8 @@
 
 (define (dec2hex n)
   (define char-digits (list 'A 'B 'C 'D 'E 'F))
+  ; converts a number to a hexadecimal digit
+  ; ex: 8 -> 8, 12 -> C
   (define (int-to-hex-digit n)
     (if (< n 10)
         n
@@ -317,6 +323,8 @@
 ; (Replace this comment with your procedure(s).)
 
 (define (inflate lst [value 1])
+  ; adds 1 if the value is a number
+  ; ex: 2 -> 3, "4" -> "4"
   (define (increment num)
     (if (number? num)
         (+ num value)
@@ -508,6 +516,8 @@
 
 (define (all-factors n)
   (define primes-power-set (power-set (prime-factors n)))
+  ; multiples all elements in a list and returns the result
+  ; ex: '(1 5 -4 3) -> -60
   (define (multiply-all lst) (foldl * 1 lst))
   (sort (remove-duplicates (map multiply-all primes-power-set)) <))
 

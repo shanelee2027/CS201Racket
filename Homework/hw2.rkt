@@ -61,7 +61,7 @@
 ; Decimal numbers (eg, 6.237) are fine.  Exclude time
 ; spent reading.
 
-(define hours 4)
+(define hours 2)
 
 ; ********************************************************
 ; ** problem 00 ** (1 fairly easy point)
@@ -84,7 +84,7 @@ total 0
 
 ; define xxxx below to be the correct UNIX command.
 
-(define xxxx "mw file homework")
+(define xxxx "mv file homework")
 
 ; ********************************************************
 ; ** problem 1 ** (8 points)
@@ -408,8 +408,43 @@ total 0
 ; (tree-min '((((((((()))))))))) => '()
 
 ; ********************************************************
+
+; returns the lesser of two numbers, if neither are numbers returns '() instead
+; ex: (min 5 3) -> 3, (min "a" (3)) -> '()
+(define (min x y)
+  (cond
+    [(and (number? x) (number? y))
+     (if (<= x y)
+         x
+         y)]
+    [(number? x)
+     x]
+    [(number? y)
+     y]
+    [else
+     '()]))
+
+; returns the minimum number in a list, and '() if there are no numbers
+; ex: '(5 2 "b") -> 2, '(("a")) -> '()
+(define (min-list lst)
+  (cond
+    [(null? lst)
+     '()]
+    [(= (length lst) 1)
+     (if (number? (car lst))
+         (car lst)
+         '())]
+    [else
+     (min (car lst) (min-list (cdr lst)))]))
+    
 (define (tree-min tree)
-  empty)
+  (cond
+    [(null? tree)
+     '()]
+    [(list? tree)
+     (min-list (list (tree-min (car tree)) (tree-min (cdr tree))))]
+    [else
+     tree]))
 
 ; (Replace this comment with your procedure(s).)
 
@@ -434,7 +469,11 @@ total 0
 
 ; ********************************************************
 (define (count-leaves tree)
-  empty)
+  (cond
+    [(list? tree)
+     (foldl + 0 (map number-of-number-leaves tree))]
+    [else
+     1]))
 
 ; (Replace this comment with your procedures.)
 
@@ -457,7 +496,13 @@ total 0
 
 ; ********************************************************
 (define (map-tree proc tree)
-  empty)
+  (cond
+    [(null? tree)
+     '()]
+    [(list? tree)
+     (cons (map-tree proc (car tree)) (map-tree proc (cdr tree)))]
+    [else
+     (proc tree)]))
 
 ; (Replace this comment with your procedure(s).)
 

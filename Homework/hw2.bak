@@ -61,7 +61,7 @@
 ; Decimal numbers (eg, 6.237) are fine.  Exclude time
 ; spent reading.
 
-(define hours 4)
+(define hours 0)
 
 ; ********************************************************
 ; ** problem 00 ** (1 fairly easy point)
@@ -84,7 +84,7 @@ total 0
 
 ; define xxxx below to be the correct UNIX command.
 
-(define xxxx "mw file homework")
+(define xxxx "correct unix command")
 
 ; ********************************************************
 ; ** problem 1 ** (8 points)
@@ -103,31 +103,8 @@ total 0
 ; (depth '((((((0))))))) => 6
 
 ; ********************************************************
-
-; returns the max of two numbers
-; ex: (max 3 5) -> 5
-(define (max x y)
-  (if (>= x y)
-      x
-      y))
-
-; returns the max of a list
-; ex: (max '(4 5 3)) -> 5
-(define (max-list lst)
-  (if (= (length lst) 1)
-      (car lst)
-      (max (car lst) (max-list (cdr lst)))))
-
 (define (depth tree)
-  (cond
-    ; if the element is not a list, 0
-    [(not (list? tree))
-     0]
-    ; if the list is empty, 0
-    [(empty? tree)
-     0]
-    [(+ (max-list (map depth tree)) 1)]))
-    
+  empty)
 
 ; (Replace this comment with your procedure(s).)
 
@@ -150,13 +127,7 @@ total 0
 ; (Replace this comment with your procedure(s).)
 
 (define (sum tree)
-  (cond
-    [(number? tree)
-     tree]
-    [(list? tree)
-     (foldl + 0 (map sum tree))]
-    [else
-     0]))
+  empty)
 
 
 ; ********************************************************
@@ -181,33 +152,8 @@ total 0
 
 ; (Replace this comment with your procedure(s).)
 
-; returns true if a tree contains a number, false otherwise
-; ex: '("a" (2 "b")) -> true, '("a" ("c" "b")) -> false
-(define (contains-number tree)
-  (cond
-    [(list? tree)
-     (ormap contains-number tree)]
-    [else
-     (if (number? tree)
-         #t
-         #f)]))
-
 (define (prod tree)
-  ; recursive prod method, returns the product of the numbers in the tree
-  ; ex: '(1 2 3 4 5 "a")) -> 120
-  (define (prod-rec tree)
-    (cond
-    [(number? tree)
-     tree]
-    [(list? tree)
-     (foldl * 1 (map prod-rec tree))]
-    [else
-     1]))
-  (cond
-    [(not (contains-number tree))
-     'none]
-    [else
-     (prod-rec tree)]))
+  empty)
 
 
 ; ********************************************************
@@ -232,13 +178,7 @@ total 0
 ; (Replace this comment with your procedure(s).)
 
 (define (count-if pred tree)
-  (cond
-    [(list? tree)
-     (foldl + 0 (map count-if (build-list (length tree) (lambda (x) pred)) tree))]
-    [else
-     (if (pred tree)
-         1
-         0)]))
+  empty)
 
 
 ; ********************************************************
@@ -264,47 +204,9 @@ total 0
 
 ;; (Replace this comment with your procedure(s).)
 
-; same as sum method above, but returns NA if the list contains no numbers
-; ex: '(1 (2 3)) -> 6, '("a" "b") -> NA
-(define (sum-NA tree)
-  ; recursive sum method, exact same as above
-  (define (sum-rec tree)
-  (cond
-    [(number? tree)
-     tree]
-    [(list? tree)
-     (foldl + 0 (map sum-rec tree))]
-    [else
-     0]))
-  (cond
-    [(not (contains-number tree))
-     'NA]
-    [(number? tree)
-     tree]
-    [(list? tree)
-     (foldl + 0 (map sum-rec tree))]
-    [else
-     0]))
-
-; returns the number of number leaves in a tree
-; ex: '(1 2 (2 3 "a")) -> 4
-(define (number-of-number-leaves tree)
-  (cond
-    [(list? tree)
-     (foldl + 0 (map number-of-number-leaves tree))]
-    [(number? tree)
-     1]
-    [else
-     0]))
 
 (define (average tree)
-  (define total-sum (sum-NA tree))
-  (cond
-    [(equal? total-sum 'NA)
-     total-sum]
-    [else
-     (/ total-sum (number-of-number-leaves tree))]))
-     
+  empty)
 
 ; ********************************************************
 ; ** problem 6 ** (10 points)
@@ -327,27 +229,7 @@ total 0
 
 ; ********************************************************
 (define (types tree)
-  (cond
-    [(null? tree)
-     (list )]
-    [(list? tree)
-     (sort (remove-duplicates (append (types (car tree)) (types (cdr tree)))) symbol<?)]
-    [else
-     (cond
-       [(flonum? tree)
-        '(flonum)]
-       [(integer? tree)
-        '(integer)]
-       [(rational? tree)
-        '(rational)]
-       [(boolean? tree)
-        '(boolean)]
-       [(string? tree)
-        '(string)]
-       [(char? tree)
-        '(character)]
-       [(symbol? tree)
-        '(symbol)])]))
+  empty)
 
 ; (Replace this comment with your procedure(s).)
 
@@ -375,18 +257,7 @@ total 0
 
 ; ********************************************************
 (define (hextree tree)
-  (cond
-    [(null? tree)
-     '()]
-    [(list? tree)
-     (cons (hextree (car tree)) (hextree (cdr tree)))]
-    [else
-     (cond
-       [(and (and (integer? tree) (>= tree 10 )) (<= tree 15))
-        (cadr (assq tree dectohexalist))]
-       [else
-        tree])]))
-        
+  empty)
 
 ; (Replace this comment with your procedure(s).)
 

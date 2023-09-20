@@ -340,6 +340,8 @@ total 0
         '(integer)]
        [(rational? tree)
         '(rational)]
+       [(complex? tree)
+        '(complex)]
        [(boolean? tree)
         '(boolean)]
        [(string? tree)

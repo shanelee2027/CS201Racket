@@ -38,7 +38,7 @@
 ; Modify the following definition to reflect the number of hours you
 ; spent on this assignment.
 
-(define hours 1)
+(define hours 3)
 
 ; ********************************************************
 ; ** problem 00 ** (1 fairly easy point)
@@ -152,6 +152,8 @@ total 0
 ; string of 0's and 1's changes all the 0's to 1's and all the 1's to
 ; 0's and then returns the head to the leftmost symbol and halts.
 
+; (next-config tm1 (conf 'q1 '() 0 '(0 1))) => (conf 'q1 '(1) 0 '(1))
+
 (define tm1 
   (list
    (ins 'q1 0 'q1 1 'R)
@@ -236,8 +238,54 @@ total 0
 ; working.
 
 ; ****************************************************************
+
+; q1 sets the left-most symbol to 'a or 'c and changes the state to q2 (0) or q3 (1) depending on whether it was originally 0 or 1, then moves to the right
+; q2 (0) and q3 (1) move to the right until they find a blank, which is when they move one left and switch to q4 (0) or q5 (1)
+; q4 (0) and q5 (1) set the symbol to 'd (0) or 'e (1), then depending on what the symbol originally was, moves left with either state q6 (0) or q7 (1)
+; q6 and q7 move left until they encounter 'a or 'c, set it to either 0 (q6) or 1 (q7), then move right with q1, starting everything again
+; all throughout there are checks to see if the process is done, the checks being that a letter has been found before any numbers while scanning in one of the various states
+; if everything's done, q8 moves to the left correctly setting any leftover 'as to 0, 'cs to 1, 'ds to 0, and 'es to 1
+
 (define tm-reverse
-  empty)
+  (list                        
+   (ins 'q1 0 'q2 'a 'R)
+   (ins 'q1 1 'q3 'c 'R)
+   (ins 'q1 'd 'q8 0 'L)
+   (ins 'q1 'e 'q8 1 'L)
+   (ins 'q1 'a 'q8 0 'L)
+   (ins 'q1 'c 'q8 1 'L)
+   (ins 'q2 0 'q2 0 'R)
+   (ins 'q2 1 'q2 1 'R)
+   (ins 'q2 'b 'q4 'b 'L)
+   (ins 'q2 'd 'q4 0 'L)
+   (ins 'q2 'e 'q4 1 'L)
+   (ins 'q3 0 'q3 0 'R)
+   (ins 'q3 1 'q3 1 'R)
+   (ins 'q3 'b 'q5 'b 'L)
+   (ins 'q3 'd 'q5 0 'L)
+   (ins 'q3 'e 'q5 1 'L)
+   (ins 'q4 0 'q6 'd 'L)
+   (ins 'q4 1 'q7 'd 'L)
+   (ins 'q4 'a 'q8 0 'L)
+   (ins 'q4 'c 'q8 1 'L)
+   (ins 'q5 0 'q6 'e 'L)
+   (ins 'q5 1 'q7 'e 'L)
+   (ins 'q5 'a 'q8 0 'L)
+   (ins 'q5 'c 'q8 1 'L)
+   (ins 'q6 0 'q6 0 'L)
+   (ins 'q6 1 'q6 1 'L)
+   (ins 'q6 'a 'q1 0 'R)
+   (ins 'q6 'c 'q1 0 'R)
+   (ins 'q7 0 'q7 0 'L)
+   (ins 'q7 1 'q7 1 'L)
+   (ins 'q7 'a 'q1 1 'R)
+   (ins 'q7 'c 'q1 1 'R)
+   (ins 'q8 0 'q8 0 'L)
+   (ins 'q8 1 'q8 1 'L)
+   (ins 'q8 'd 'q8 0 'L)
+   (ins 'q8 'e 'q8 1 'L)
+   (ins 'q8 'b 'q9 'b 'R)
+   ))
 
 ; ****************************************************************
 ; ** problem 2 (10 points)
@@ -277,10 +325,15 @@ total 0
 ; ****************************************************************
 
 (define (i-match? state symbol inst)
-  empty)
+  (if (and (equal? state (ins-c-state inst)) (equal? symbol (ins-c-symbol inst)))
+      #t
+      #f))
 
 (define (i-lookup state symbol mach)
-  empty)
+  (define result (memf (lambda (instruction) (i-match? state symbol instruction)) mach))
+  (if (list? result)
+      (car result)
+      #f))
 
 ; ****************************************************************
 ; Representation of a Turing machine configuration.
@@ -365,13 +418,14 @@ total 0
 ; ****************************************************************
 
 (define (halted? mach config)
-  empty)
+  (not (ormap (lambda (instruction) (and (equal? (conf-state config) (ins-c-state instruction)) (equal? (conf-symbol config)(ins-c-symbol instruction)))) mach)))
+
 
 (define (change-state new-state config)
-  empty)
+  (conf new-state (conf-ltape config) (conf-symbol config) (conf-rtape config)))
 
 (define (write-symbol new-symbol config)
-  empty)
+  (conf (conf-state config) (conf-ltape config) new-symbol (conf-rtape config)))
 
 ; ****************************************************************
 ; ** problem 4 ** (10 points)
@@ -393,7 +447,13 @@ total 0
 ; ****************************************************************
 
 (define (normalize config)
-  empty)
+  (define (normalize-ltape ltape)
+    (define result (memf (lambda (elem) (not (equal? 'b elem))) ltape))
+    (if (equal? #f result)
+        '()
+        result))
+  (conf (conf-state config) (normalize-ltape (conf-ltape config)) (conf-symbol config) (reverse (normalize-ltape (reverse (conf-rtape config))))))
+                                                                                                                  
 
 ; ****************************************************************
 ; ** problem 5 ** (10 points)
@@ -423,10 +483,14 @@ total 0
 ; all but last element of a list -- uses Racket's drop-right
 
 (define (shift-head-left config)
-  empty)
+  (if (null? (conf-ltape config))
+      (normalize (conf (conf-state config) '() 'b (cons (conf-symbol config) (conf-rtape config))))
+      (normalize (conf (conf-state config) (drop-right (conf-ltape config) 1) (last (conf-ltape config)) (cons (conf-symbol config) (conf-rtape config))))))
 
 (define (shift-head-right config)
-  empty)
+  (if (null? (conf-rtape config))
+      (normalize (conf (conf-state config) (append (conf-ltape config) (list (conf-symbol config))) 'b '()))
+      (normalize (conf (conf-state config) (append (conf-ltape config) (list (conf-symbol config))) (car (conf-rtape config)) (cdr (conf-rtape config))))))
 
 ; ****************************************************************
 ; ** problem 6 ** (15 points)
@@ -451,7 +515,14 @@ total 0
 ; (next-config tm1 (conf 'q3 '() 1 '(1 0))) => (conf 'q3 '() 1 '(1 0))
 ; ****************************************************************
 (define (next-config mach config)
-  empty)
+  (define next-instruction (i-lookup (conf-state config) (conf-symbol config) mach))
+  (cond
+    [(equal? next-instruction #f)
+     config]
+    [(equal? (ins-dir next-instruction) 'L)
+     (change-state (ins-n-state next-instruction) (shift-head-left (write-symbol (ins-n-symbol next-instruction) config)))]
+    [else
+     (change-state (ins-n-state next-instruction) (shift-head-right (write-symbol (ins-n-symbol next-instruction) config)))]))
 
 ; ****************************************************************
 ; If your procedures are working, then you should
@@ -517,8 +588,27 @@ total 0
 
 ; ****************************************************************
 
+; q1 goes to the right-most digit by turning left after the first blank, then starts q2
+; q2 looks at the digits right-to-left until the first 1 appears, changes the 1 to a 0, then turns right and starts q3
+; q3 turns every digit (which should all be 0s) into 1s, then places an 'x where the first blank is, then turns left and starts q2
+; by doing this, we subtract the number by 1, and add an x. for example, 10100 goes down to 10011
+; we end when q2 can't find any more 1s (aka q2 finds a blank). q2 turns right and starts q4
+; q4 deletes the numbers, leaving with only xs
+
 (define tm-convert
-  empty)
+  (list
+   (ins 'q1 0 'q1 0 'R)
+   (ins 'q1 1 'q1 1 'R)
+   (ins 'q1 'b 'q2 'b 'L)
+   (ins 'q2 0 'q2 0 'L)
+   (ins 'q2 'x 'q2 'x 'L)
+   (ins 'q2 1 'q3 0 'R)
+   (ins 'q2 'b 'q4 'b 'R)
+   (ins 'q3 0 'q3 1 'R)
+   (ins 'q3 'x 'q3 'x 'R)
+   (ins 'q3 'b 'q2 'x 'L)
+   (ins 'q4 0 'q4 'b 'R)
+   ))
 
 ; ****************************************************************
 ; ** problem 8 ** (15 points)
@@ -566,8 +656,29 @@ total 0
 (define sort-long (conf 'q1 '() 1 '(0 1 1 0 1 1)))
 ; ****************************************************************
 
+; q1 goes right until it finds a 1, then keeps going right with state q2
+; q2 goes right until it finds a 0, sets it to 1, then turns left with state q3
+; q3 goes left until it finds a 0 or blank, then turns right with state q4.
+; q4 sets the current digit, which should be a 1, to 0, then goes right and back to state q1
+
 (define tm-sort
-  empty)
+  (list
+   (ins 'q1 0 'q1 0 'R)
+   (ins 'q1 1 'q2 1 'R)
+   (ins 'q1 'b 'q5 'b 'L)
+   ; add end state if q1 does not find 1s
+   (ins 'q2 1 'q2 1 'R)
+   (ins 'q2 0 'q3 1 'L)
+   (ins 'q2 'b 'q5 'b 'L)
+   ; add end state if q2 does not find 0s
+   (ins 'q3 1 'q3 1 'L)
+   (ins 'q3 0 'q4 0 'R)
+   (ins 'q3 'b 'q4 'b 'R)
+   (ins 'q4 1 'q1 0 'R)
+   (ins 'q5 0 'q5 0 'L)
+   (ins 'q5 1 'q5 1 'L)
+   (ins 'q5 'b 'q6 'b 'R)
+   ))
 
 ; ********  testing, testing. 1, 2, 3 ....
 ; ********************************************************

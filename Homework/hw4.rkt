@@ -440,7 +440,12 @@
 ; ****************************************************************
 
 (define (all-combs n)
-  (error "all-combs not defined yet"))
+  (cond
+    [(equal? n 0)
+     '(())]
+    [else
+     (append (map (lambda (lst) (cons 0 lst)) (all-combs (- n 1)))
+             (map (lambda (lst) (cons 1 lst)) (all-combs (- n 1))))]))
 
 ; ****************************************************************
 ; ** problem 6 ** (10 points)
@@ -477,7 +482,11 @@
 ; ****************************************************************
 
 (define (truth-table exp)
-  (error "truth-table not defined yet"))
+  (tt (all-vars exp) (map
+                      (lambda (comb)
+                        (entry comb (eval-in-env exp (map (lambda (var val)
+                                                            (entry var val)) (all-vars exp) comb))))
+                        (all-combs (length (all-vars exp))))))
 
 ; ****************************************************************
 ; ** problem 7 ** (10 points)
@@ -528,10 +537,11 @@
 ; ****************************************************************
 
 (define (satisfiable? exp)
-  (error "satisfiable? not defined yet"))
+  (ormap (lambda (entry1)
+           (equal? 1 (entry-value entry1))) (tt-rows (truth-table exp))))
 
 (define (equivalent? exp1 exp2)
-  (error "equivalent? not defined yet"))
+  empty)
 
 ; ****************************************************************
 ; ** problem 8 ** (10 points)

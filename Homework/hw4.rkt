@@ -31,7 +31,7 @@
 ; Please modify the following definition to reflect the number of
 ; hours you spent on this assignment.
 
-(define hours 3)
+(define hours 4)
 
 ; ****************************************************************
 ; Unless the problem specifies otherwise:
@@ -540,8 +540,26 @@
   (ormap (lambda (entry1)
            (equal? 1 (entry-value entry1))) (tt-rows (truth-table exp))))
 
+; Copy of truth-table above, but allows you to choose a list of variables ahead of time
+; The purpose is to be able to create truth tables containing variables like 'a for an expression such as 0,
+; which does not contain an 'a. That particular example would have a truth table that looks like this:
+; (0) -> 0
+; (1) -> 0
+; As shown, the actual value of 'a does not matter in the evaluation of the expression. The only purpose of the 'a
+; is to allow me to compare the expression 0 with the expression (not 'a), for example, by comparing their truth tables,
+; which now should contain the same number of rows
+(define (truth-table-custom-vars vars exp)
+  (tt vars (map
+            (lambda (comb)
+              (entry comb (eval-in-env exp (map (lambda (var val)
+                                                  (entry var val)) vars comb))))
+            (all-combs (length vars)))))
+
 (define (equivalent? exp1 exp2)
-  empty)
+  (define vars (all-vars (bor exp1 exp2)))
+  (andmap (lambda (entry1 entry2)
+            (equal? (entry-value entry1) (entry-value entry2)))
+          (tt-rows (truth-table-custom-vars vars exp1)) (tt-rows (truth-table-custom-vars vars exp2))))
 
 ; ****************************************************************
 ; ** problem 8 ** (10 points)
@@ -572,8 +590,25 @@
 ;> 
 ; ****************************************************************
 
-(define (find-exp tt)
-  (error "find-exp not defined yet"))
+; finds a boolean expression satisfying one entry, given a list of variables
+; (find-exp-per-entry '(x y) (entry '(0 1) 1)) -> (band (bnot 'x) (band 'y 1))
+(define (find-exp-per-entry vars entry1)
+  (cond
+    [(equal? (entry-value entry1) 0)
+     0]
+    [(empty? (entry-key entry1))
+     1]
+    [else
+     (if (equal? (first (entry-key entry1)) 1)
+         (band (first vars) (find-exp-per-entry (rest vars) (entry (rest (entry-key entry1)) (entry-value entry1))))
+         (band (bnot (first vars)) (find-exp-per-entry (rest vars) (entry (rest (entry-key entry1)) (entry-value entry1)))))]))
+
+(define (find-exp tt1)
+  (cond
+    [(empty? (tt-rows tt1))
+     0]
+    [else
+     (bor (find-exp-per-entry (tt-vars tt1) (first (tt-rows tt1))) (find-exp (tt (tt-vars tt1) (rest (tt-rows tt1)))))]))
 
 ; ****************************************************************
 ; ** problem 9 ** (10 points)
@@ -601,8 +636,29 @@
 ;> 
 ; ****************************************************************
 
+; substitute-in but for one variable
+; (substitute-in-one-var 'x (entry 'x 1)) -> 1
+(define (substitute-in-one-var exp entry1)
+  (cond
+    [(bnot? exp)
+     (bnot (substitute-in-one-var (bnot-arg exp) entry1))]
+    [(band? exp)
+     (band (substitute-in-one-var (band-arg1 exp) entry1) (substitute-in-one-var (band-arg2 exp) entry1))]
+    [(bor? exp)
+     (bor (substitute-in-one-var (bor-arg1 exp) entry1) (substitute-in-one-var (bor-arg2 exp) entry1))]
+    [(equal? exp (entry-key entry1))
+     (entry-value entry1)]
+    [else
+     exp]))
+
 (define (substitute-in exp sub-table)
-  (error "substitute-in not defined yet"))
+  (cond
+    [(not (list? sub-table))
+     #f]
+    [(empty? sub-table)
+     exp]
+    [else
+     (substitute-in (substitute-in-one-var exp (first sub-table)) (rest sub-table))]))
 
 ; ****************************************************************
 ; ** problem 10 ** (10 points)
@@ -642,8 +698,60 @@
 ;> 
 ; ****************************************************************
 
+; returns #t if there exists a discrepancy between reassingment subtables 1 and 2, for example,
+; if subtable maps 'x to 'y but subtable2 maps 'x to 0
+; returns #f otherwise, including if both subtables include a map from 'x to 0
+; eg: (duplicate-assignments (list (entry 'x (band 'a 'b))) (list (entry 'x (bor 'a 'b)))) = #t
+; eg; (duplicate-assignments (list (entry 'x (band 'a 'b))) (list (entry 'y (bor 'a 'b)))) = #f
+; eg: (duplicate-assignments (list (entry 'x (band 'a 'b))) (list (entry 'x (band 'a 'b)))) = #f
+(define (duplicate-assignments subtable1 subtable2)
+  (ormap (lambda (entry1)
+           (ormap (lambda (entry2)
+                    (and (equal? (entry-key entry1) (entry-key entry2))
+                         (not (equal? (entry-value entry1) (entry-value entry2))))) subtable2)) subtable1))
+
 (define (match exp pat)
-  (error "match not defined yet"))
+  (cond
+    [(bnot? pat)
+     (cond
+       [(bnot? exp)
+        (match (bnot-arg exp) (bnot-arg pat))]
+       [else
+        #f])]
+    [(band? pat)
+     (cond
+       [(band? exp)
+        (define result1 (match (band-arg1 exp) (band-arg1 pat)))
+        (define result2 (match (band-arg2 exp) (band-arg2 pat)))
+        (cond
+          [(or (equal? #f result1) (equal? #f result2))
+           #f]
+          [(duplicate-assignments result1 result2)
+           #f]
+          [else
+           (remove-duplicates (append result1 result2))])]
+       [else
+        #f])]
+    [(bor? pat)
+     (cond
+       [(bor? exp)
+        (define result1 (match (bor-arg1 exp) (bor-arg1 pat)))
+        (define result2 (match (bor-arg2 exp) (bor-arg2 pat)))
+        (cond
+          [(or (equal? #f result1) (equal? #f result2))
+           #f]
+          [(duplicate-assignments result1 result2)
+           #f]
+          [else
+           (remove-duplicates (append result1 result2))])]
+       [else
+        #f])]
+    [(equal? (type-of pat) 'variable)
+     (list (entry pat exp))]
+    [else
+     (if (equal? exp pat)
+         '()
+         #f)]))
                   
 ; ********************************************************
 ; ********  testing, testing. 1, 2, 3 ....

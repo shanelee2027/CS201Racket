@@ -1,0 +1,10 @@
+#lang racket
+(struct point (x y))
+(define (point-add point1 point2)
+  (cond
+    [(and (point? point1) (point? point2))
+     (point (+ (point-x point1) (point-x point2)) (+ (point-y point1) (point-y point2)))]
+    [else
+     null]))
+    
+                   

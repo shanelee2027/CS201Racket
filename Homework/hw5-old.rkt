@@ -1,3 +1,4 @@
+
 #lang racket
 
 (provide hours
@@ -6,6 +7,7 @@
          good-gate? good-circuit?
          all-wires find-gate
          ha-ckt fa-ckt
+         entry entry? entry-key entry-value
          next-value
          next-config
          stable? all-stable-configs output-values init-config
@@ -13,18 +15,17 @@
          final-config
          add-ckt
          dff-ckt
-         timing-ckt
-)
+         timing-ckt)
 
 
 ; Please do not edit lines above this one
 
 ;**********************************************************
-; CS 201b HW #5, due 11:59 pm Wednesday, November 1st
+; CS 201 HW #5, due 11:59 pm Wednesday November 1st
 ; using the submit command.
 ;**********************************************************
-; Name: Shane Lee
-; Email address: shane.lee@yale.edu
+; Name:
+; Email address:
 ;**********************************************************
 
 ; Computer science topics: gates and circuits
@@ -32,7 +33,6 @@
 ; Unless the problem specifies otherwise:
 ; * You may solve the problem using any method 
 ; and any Racket constructs, except mutators (set! and its relatives.)
-; EXCEPT you may use hash mutators, e.g., hash-set!
 ; * You may write auxiliary procedure(s) in addition to
 ; the one(s) specified in the problem.  Please include
 ; a comment for each one explaining its input and results.
@@ -42,7 +42,7 @@
 ; Modify the following definition to reflect the number of
 ; hours you spent on this assignment.
 
-(define hours 3)
+(define hours 5)
 
 ;**********************************************************
 
@@ -53,7 +53,7 @@
 
 ; A gate is a struct with three fields: 
 ; 1) a symbol indicating the type of gate, one of:
-;       'not, 'and, 'or, 'xor, 'nand, 'nor
+;       not, and, or, xor, nand, nor
 ; 2) a list of the wire identifiers of the inputs
 ; 3) the output wire identifier
 
@@ -238,7 +238,6 @@
 ; (good-circuit? (ckt '(x y) '(u z) (list (gate 'or '(x y) 'z)))) => #f
 ;**********************************************************
 
-
 (define (good-gate? value)
   (cond
     [(not (gate? value))
@@ -342,7 +341,6 @@
 ; (find-gate 'y sel-ckt) => #f
 ;**********************************************************
 
-
 (define (all-wires circuit) 
   (remove-duplicates (append (ckt-inputs circuit)
                              (append (ckt-outputs circuit)
@@ -363,6 +361,7 @@
      (first (ckt-gates circuit))]
     [else
      (find-gate wire (ckt (ckt-inputs circuit) (ckt-outputs circuit) (rest (ckt-gates circuit))))]))
+
 
 ;**********************************************************
 ; ** problem 3 ** (10 points)
@@ -401,6 +400,7 @@
        (list
         (gate 'xor '(x y) 'z)
         (gate 'and '(x y) 'co))))
+;   "ha-ckt is not defined yet")
 
 (define fa-ckt
   (ckt '(x y ci)
@@ -413,49 +413,87 @@
         (gate 'or '(y ci) 'yci)
         (gate 'and '(xy xci) 'xy+xci)
         (gate 'and '(xy+xci yci) 'co))))
+;  "fa-ckt is not defined yet")
+
 
 ;**********************************************************
+; A configuration of a circuit is a table giving a value (0 or 1) for each wire in the circuit.  
+; A table is a list of entries, each entry containing a key (the wire name) and a value (0 or 1).
 
-; A configuration of a circuit is a hash table giving a value (0 or 1)
-; for each wire in the circuit.  A table is a list key-value pairs,
-; such that the key is the symbol for the wire and the value is either
-; 0 or 1.
-
+(struct entry (key value) #:transparent)
 
 ; Examples
+; Two configurations of the wires of the eq1-ckt
+; Note that the order of wires in the configuration is that returned by (all-wires eq1-ckt).
 
-; Two configurations of the wires of the eq1-ckt Note that the order
-; of wires in the configuration is that returned by (all-wires
-; eq1-ckt).
+(define eq1-config1
+  (list
+   (entry 'x 0)
+   (entry 'y 1)
+   (entry 'z 0)
+   (entry 'cx 0)
+   (entry 'cy 0)
+   (entry 't1 0)
+   (entry 't2 0)))
 
-(define eq1-config1x
-  (make-hash '((x . 0) (y . 1) (z  . 0) (cx  . 0)
-	       (cy  . 0) (t1  . 0) (t2  . 0))))
-
-(define eq1-config2x
-  (make-hash '((x . 0) (y . 0) (z  . 0) (cx  . 1)
-	       (cy  . 1) (t1  . 0) (t2  . 0))))
+(define eq1-config2 
+  (list
+   (entry 'x 0)
+   (entry 'y 0)
+   (entry 'z 0)
+   (entry 'cx 1)
+   (entry 'cy 1)
+   (entry 't1 0)
+   (entry 't2 0)))
 
 ; Two configurations of the wires of the sel-ckt
 
-(define sel-config1x
-  (make-hash '((x1 . 0) (x0 . 1) (y1 . 1) (y0 . 0) (s . 1) 
-	(z1 . 0) (z0 . 0) (sc . 0) (u1 . 0) (v1 . 0)
-	(u0 . 0) (v0 . 0))))
+(define sel-config1
+  (list
+   (entry 'x1 0)
+   (entry 'x0 1)
+   (entry 'y1 1)
+   (entry 'y0 0)
+   (entry 's 1)
+   (entry 'z1 0)
+   (entry 'z0 0)
+   (entry 'sc 0)
+   (entry 'u1 0)
+   (entry 'v1 0)
+   (entry 'u0 0)
+   (entry 'v0 0)))
 
-(define sel-config2x 
-  (make-hash '((x1 . 1) (x0 . 1) (y1 . 0) (y0 . 0) (s . 0) 
-	(z1 . 0) (z0 . 0) (sc . 1) (u1 . 0) (v1 . 0)
-	(u0 . 0) (v0 . 0))))
 
+(define sel-config2
+  (list
+   (entry 'x1 1)
+   (entry 'x0 1)
+   (entry 'y1 0)
+   (entry 'y0 0)
+   (entry 's 0)
+   (entry 'z1 0)
+   (entry 'z0 0)
+   (entry 'sc 1)
+   (entry 'u1 0)
+   (entry 'v1 0)
+   (entry 'u0 0)
+   (entry 'v0 0)))
 
 ; Two configurations of the wires of the latch-ckt
 
-(define latch-config1x 
-  (make-hash '((x . 0) (y . 0) (q . 0) (u . 0) )))
+(define latch-config1
+  (list
+   (entry 'x 0)
+   (entry 'y 0)
+   (entry 'q 0)
+   (entry 'u 0)))
 
-(define latch-config2x 
-  (make-hash '((x . 0) (y . 1) (q . 1) (u . 0) )))
+(define latch-config2
+  (list
+   (entry 'x 0)
+   (entry 'y 1)
+   (entry 'q 1)
+   (entry 'u 0)))
 
 ;**********************************************************
 ; ** problem 4 ** (10 points)
@@ -463,9 +501,8 @@
 
 ;(next-value wire circuit config)
 
-; that returns the value on the given wire of the given circuit,
-; *after one gate delay* starting with the given configuration config
-; of the circuit.
+; that returns the value on the given wire of the given circuit *after one gate delay*,
+; starting with the given configuration config of the circuit.
 
 ; You may assume that
 ; (1) circuit is a well-formed circuit, according to the specifications in problem 1,
@@ -475,11 +512,10 @@
 ; If the given wire is an input wire of the circuit,
 ; its next value is just its value in the configuration config.
 
-; If the given wire is the output wire of a gate, its next value is
-; obtained by finding the gate of circuit for which it is the output
-; wire, looking up the values of the input wires of the gate in the
-; configuration config, and applying the appropriate function of the
-; gate to the input values.
+; If the given wire is the output wire of a gate,
+; its next value is obtained by finding the gate of circuit for which it is the output wire, 
+; looking up the values of the input wires of the gate in the configuration config,
+; and applying the appropriate function of the gate to the input values.
 
 ; Note that this doesn't compute the *eventual* value (if any) of the wire, 
 ; just the *next* value of the wire, after one gate delay.
@@ -487,18 +523,24 @@
 ; You may want to write an auxiliary procedure to look up the value of a wire in a configuration.
 
 ; Examples
- ;(next-value 'cx eq1-ckt eq1-config1x) => 1
-; (next-value 't2 eq1-ckt eq1-config1x) => 0
-; (next-value 'z eq1-ckt eq1-config2x) => 0
-; (next-value 'x0 sel-ckt sel-config1x) => 1
-; (next-value 'v1 sel-ckt sel-config1x) => 1
-; (next-value 'v0 sel-ckt sel-config2x) => 0
+; (next-value 'cx eq1-ckt eq1-config1) => 1
+; (next-value 't2 eq1-ckt eq1-config1) => 0
+; (next-value 'z eq1-ckt eq1-config2) => 0
+; (next-value 'x0 sel-ckt sel-config1) => 1
+; (next-value 'v1 sel-ckt sel-config1) => 1
+; (next-value 'v0 sel-ckt sel-config2) => 0
 ;**********************************************************
 
 ; returns the value of a wire in a config, returns #f if the wire is not in the config
 ; (wire-value 'x eq1-config1) => 0
 (define (wire-value wire config)
-  (hash-ref config wire #f))
+  (cond
+    [(empty? config)
+     #f]
+    [(equal? wire (entry-key (first config)))
+     (entry-value (first config))]
+    [else
+     (wire-value wire (rest config))]))
 
 (define (next-value wire circuit config)
   (cond
@@ -529,6 +571,7 @@
         (if (equal? (+ (wire-value (first (gate-inputs gate1)) config) (wire-value (last (gate-inputs gate1)) config)) 0)
             1
             0)])]))
+    
 
 ;**********************************************************
 ; ** problem 5 ** (10 points)
@@ -536,49 +579,68 @@
 
 ; (next-config circuit config)
 
-; that takes a circuit and a current configuration config and returns
-; the "next" configuration of the circuit, after *one gate delay* has
-; elapsed.
+; that takes a circuit and a current configuration config
+; and returns the "next" configuration of the circuit, after *one gate delay* has elapsed.
 
-; In the "next" configuration of the circuit the value of each wire is
-; the result of applying the next-value procedure to the wire, circuit
-; and the configuration config.  Note that only the values of wires in
-; config are used for inputs, not the new values.
+; In the "next" configuration of the circuit the value of each wire is the result
+; of applying the next-value procedure to the wire, circuit and the configuration config.
+; Note that only the values of wires in config are used for inputs, not the new values.
 
-; Thus, values on the input wires do not change, and each wire that is
-; the output of a gate has the value determined by its gate function
-; applied the values of its input wires in the configuration config.
+; Thus, values on the input wires do not change, and each wire that is the output
+; of a gate has the value determined by its gate function applied to the values
+; of its input wires in the configuration config.
 
-; This is a rather simplified model of the time-varying behavior of
-; wires and gates.
+; This is a rather simplified model of the time-varying behavior of wires and gates.
 
 ; Examples
-;> (next-config eq1-ckt eq1-config1x)
-; '#hash((cx . 1) (cy . 0) (t1 . 0) (t2 . 0) (x . 0) (y . 1) (z . 0))
+;> (next-config eq1-ckt eq1-config1)
+;(list (entry 'x 0) (entry 'y 1) (entry 'z 0) (entry 'cx 1) (entry 'cy 0) (entry 't1 0) (entry 't2 0))
 
-;> (next-config eq1-ckt eq1-config2x)
-; '#hash((cx . 1) (cy . 1) (t1 . 0) (t2 . 1) (x . 0) (y . 0) (z . 0))
+;> (next-config eq1-ckt eq1-config2)
+;(list (entry 'x 0) (entry 'y 0) (entry 'z 0) (entry 'cx 1) (entry 'cy 1) (entry 't1 0) (entry 't2 1))
 
-;> (next-config sel-ckt sel-config1x)
-; '#hash((s . 1) (sc . 0) (u0 . 0) (u1 . 0) (v0 . 0) (v1 . 1)
-;        (x0 . 1) (x1 . 0) (y0 . 0) (y1 . 1) (z0 . 0) (z1 . 0))
+;> (next-config sel-ckt sel-config1)
+;(list
+; (entry 'x1 0)
+; (entry 'x0 1)
+; (entry 'y1 1)
+; (entry 'y0 0)
+; (entry 's 1)
+; (entry 'z1 0)
+; (entry 'z0 0)
+; (entry 'sc 0)
+; (entry 'u1 0)
+; (entry 'v1 1)
+; (entry 'u0 0)
+; (entry 'v0 0))
 
-;> (next-config sel-ckt (next-config sel-ckt sel-config1x))
-; '#hash((s . 1) (sc . 0) (u0 . 0) (u1 . 0)  (v0 . 0) (v1 . 1)
-;        (x0 . 1) (x1 . 0) (y0 . 0) (y1 . 1) (z0 . 0) (z1 . 1))
+;> (next-config sel-ckt (next-config sel-ckt sel-config1))
+;(list
+; (entry 'x1 0)
+; (entry 'x0 1)
+; (entry 'y1 1)
+; (entry 'y0 0)
+; (entry 's 1)
+; (entry 'z1 1)
+; (entry 'z0 0)
+; (entry 'sc 0)
+; (entry 'u1 0)
+; (entry 'v1 1)
+; (entry 'u0 0)
+; (entry 'v0 0))
 
-;> (next-config latch-ckt latch-config1x)
-; '#hash((q . 1) (u . 1) (x . 0) (y . 0))
+;> (next-config latch-ckt latch-config1)
+;(list (entry 'x 0) (entry 'y 0) (entry 'q 1) (entry 'u 1))
 
-;> (next-config latch-ckt latch-config2x) 
-; '#hash((q . 1) (u . 0) (x . 0) (y . 1))
+;> (next-config latch-ckt latch-config2) 
+;(list (entry 'x 0) (entry 'y 1) (entry 'q 1) (entry 'u 0))
 
 ;**********************************************************
 
 (define (next-config circuit config)
-  (make-hash (map (lambda (wire)
-                    (cons wire (next-value wire circuit config)))
-                  (all-wires circuit))))
+  (map (lambda (wire)
+         (entry wire (next-value wire circuit config)))
+       (all-wires circuit)))
 
 ;**********************************************************
 ; ** problem 6 ** (10 points)
@@ -590,52 +652,44 @@
 ; (init-config circuit input-values)
 
 ; (stable? circuit config)
-; returns #t if the next configuration of the circuit after the
-; configuration config is the same as config, ie, this configuration
-; is stable for the circuit.
+; returns #t if the next configuration of the circuit after the configuration config
+; is the same as config, ie, this configuration is stable for the circuit.
 
 ; (all-stable-configs circuit)
-; returns a list of all the stable configurations of the circuit.  The
-; wires in the configurations should be listed in the same order as
-; (all-wires circuit), and the values in the configurations list
-; should be in increasing order, considered as binary numbers.
+; returns a list of all the stable configurations of the circuit.
+; The wires in the configurations should be listed in the same order as (all-wires circuit),
+; and the values in the configurations list should be in increasing order, considered as
+; binary numbers.
 
 ; (output-values circuit config)
-; returns a list giving the Boolean values of each of the output wires
-; of the circuit in the configuration config.  The order is the same
-; as the list of output wires of the circuit.
+; returns a list giving the Boolean values of each of the output wires of
+; the circuit in the configuration config.
+; The order is the same as the list of output wires of the circuit.
 
 ; (init-config circuit input-values)
-; takes a circuit and a list input-values of Boolean values which has
-; the same length as the number of inputs of the circuit and returns a
-; configuration in which the circuit input wires have the values
-; specified (in order) by the list inputs, and all other wires have
-; the value 0.
+; takes a circuit and a list input-values of Boolean values
+; which has the same length as the number of inputs of the circuit
+; and returns a configuration in which the circuit input wires have the values 
+; specified (in order) by the list inputs, and all other wires have the value 0.
 
 ; Examples
-
-; (stable? eq1-ckt (make-hash '((x . 0) (y . 0) (z . 1) (cx . 1) 
-;    (cy . 1) (t1 . 0) (t2 . 1)))) => #t
-
-; (stable? eq1-ckt (make-hash '((x . 0) (y . 0) (z . 0)
-;    (cx . 1) (cy . 0) (t1 . 1) (t2 . 0)))) => #f
+; (stable? eq1-ckt (list (entry 'x 0) (entry 'y 0) (entry 'z 1) (entry 'cx 1) (entry 'cy 1) (entry 't1 0) (entry 't2 1))) => #t
+; (stable? eq1-ckt (list (entry 'x 0) (entry 'y 0) (entry 'z 0) (entry 'cx 1) (entry 'cy 0) (entry 't1 1) (entry 't2 0))) => #f
 
 ;> (all-stable-configs eq2-ckt)
-;'(#hash((w . 0) (x . 0) (y . 0) (z . 1))
-;  #hash((w . 1) (x . 0) (y . 1) (z . 0))
-;  #hash((w . 1) (x . 1) (y . 0) (z . 0))
-;  #hash((w . 0) (x . 1) (y . 1) (z . 1)))
+;(list
+; (list (entry 'x 0) (entry 'y 0) (entry 'z 1) (entry 'w 0))
+; (list (entry 'x 0) (entry 'y 1) (entry 'z 0) (entry 'w 1))
+; (list (entry 'x 1) (entry 'y 0) (entry 'z 0) (entry 'w 1))
+; (list (entry 'x 1) (entry 'y 1) (entry 'z 1) (entry 'w 0)))
 
 ;> (all-stable-configs seq-or-ckt)
-; '(#hash((x . 0) (z . 0)) #hash((x . 0) (z . 1)) #hash((x . 1) (z . 1)))
+;(list (list (entry 'x 0) (entry 'z 0)) (list (entry 'x 0) (entry 'z 1)) (list (entry 'x 1) (entry 'z 1)))
 
-; (output-values eq1-ckt eq1-config2x) => '(0)
-; (output-values latch-ckt latch-config2x) => '(1 0)
-
-; (init-config eq1-ckt '(1 0)) => 
-; '#hash((cx . 0) (cy . 0) (t1 . 0) (t2 . 0) (x . 1) (y . 0) (z . 0))
-
-; (init-config clock-ckt '()) => '#hash((z . 0))
+; (output-values eq1-ckt eq1-config2) => '(0)
+; (output-values latch-ckt latch-config2) => '(1 0)
+; (init-config eq1-ckt '(1 0)) => (list (entry 'x 1) (entry 'y 0) (entry 'z 0) (entry 'cx 0) (entry 'cy 0) (entry 't1 0) (entry 't2 0))
+; (init-config clock-ckt '()) => (list (entry 'z 0))
 
 ;**********************************************************
 
@@ -657,10 +711,11 @@
 ; given a list of wires and a combination
 ; (create-config '(x y) '(0 1)) => (list (entry 'x 0) (entry 'y 1))
 (define (create-config wires comb)
-  (make-hash (map (lambda (wire val)
-                    (cons wire val))
-                  wires
-                  comb)))
+  (cond
+    [(empty? wires)
+     '()]
+    [else
+     (cons (entry (first wires) (first comb)) (create-config (rest wires) (rest comb)))]))
 
 (define (all-stable-configs circuit)
   (define all-wires1 (all-wires circuit))
@@ -688,34 +743,75 @@
 
 ; (simulate circuit config n)
 
-; which simulates the given circuit from the given configuration by
-; repeatedly calling next-config until either the configuration
-; reached is stable, or next-config has been called n times, whichever
-; occurs first.
+; which simulates the given circuit from the given configuration 
+; by repeatedly calling next-config until either
+; the configuration reached is stable, or
+; next-config has been called n times, whichever occurs first.
 
 ; Examples
-;> (simulate clock-ckt (make-hash '((z . 0))) 4)
-; '(#hash((z . 0)) #hash((z . 1)) #hash((z . 0)) #hash((z . 1)) #hash((z . 0)))
+;> (simulate clock-ckt (list (entry 'z 0)) 4)
+;(list
+; (list (entry 'z 0))
+; (list (entry 'z 1))
+; (list (entry 'z 0))
+; (list (entry 'z 1))
+; (list (entry 'z 0)))
 
-;> (simulate eq1-ckt eq1-config1x 5) =>
-; '(#hash((cx . 0) (cy . 0) (t1 . 0) (t2 . 0) (x . 0) (y . 1) (z . 0))
-;   #hash((cx . 1) (cy . 0) (t1 . 0) (t2 . 0) (x . 0) (y . 1) (z . 0)))
+;> (simulate eq1-ckt eq1-config1 5)
+;(list
+; (list (entry 'x 0) (entry 'y 1) (entry 'z 0) (entry 'cx 0) (entry 'cy 0) (entry 't1 0) (entry 't2 0))
+; (list (entry 'x 0) (entry 'y 1) (entry 'z 0) (entry 'cx 1) (entry 'cy 0) (entry 't1 0) (entry 't2 0)))
 
-;> (simulate sel-ckt sel-config1x 5) =>
-;'(#hash((s . 1) (sc . 0) (u0 . 0) (u1 . 0) (v0 . 0) (v1 . 0)
-;    (x0 . 1)  (x1 . 0) (y0 . 0) (y1 . 1) (z0 . 0) (z1 . 0))
-;  #hash((s . 1) (sc . 0) (u0 . 0) (u1 . 0) (v0 . 0) (v1 . 1)
-;    (x0 . 1) (x1 . 0) (y0 . 0) (y1 . 1) (z0 . 0) (z1 . 0))
-;  #hash((s . 1) (sc . 0) (u0 . 0) (u1 . 0) (v0 . 0) (v1 . 1)
-;    (x0 . 1) (x1 . 0) (y0 . 0) (y1 . 1) (z0 . 0) (z1 . 1)))
+;> (simulate sel-ckt sel-config1 5)
+;(list
+; (list
+;  (entry 'x1 0)
+;  (entry 'x0 1)
+;  (entry 'y1 1)
+;  (entry 'y0 0)
+;  (entry 's 1)
+;  (entry 'z1 0)
+;  (entry 'z0 0)
+;  (entry 'sc 0)
+;  (entry 'u1 0)
+;  (entry 'v1 0)
+;  (entry 'u0 0)
+;  (entry 'v0 0))
+; (list
+;  (entry 'x1 0)
+;  (entry 'x0 1)
+;  (entry 'y1 1)
+;  (entry 'y0 0)
+;  (entry 's 1)
+;  (entry 'z1 0)
+;  (entry 'z0 0)
+;  (entry 'sc 0)
+;  (entry 'u1 0)
+;  (entry 'v1 1)
+;  (entry 'u0 0)
+;  (entry 'v0 0))
+; (list
+;  (entry 'x1 0)
+;  (entry 'x0 1)
+;  (entry 'y1 1)
+;  (entry 'y0 0)
+;  (entry 's 1)
+;  (entry 'z1 1)
+;  (entry 'z0 0)
+;  (entry 'sc 0)
+;  (entry 'u1 0)
+;  (entry 'v1 1)
+;  (entry 'u0 0)
+;  (entry 'v0 0)))
 
-;> (simulate latch-ckt latch-config2x 3) =>
-; '(#hash((q . 1) (u . 0) (x . 0) (y . 1)))
+;> (simulate latch-ckt latch-config2 3)
+;(list (list (entry 'x 0) (entry 'y 1) (entry 'q 1) (entry 'u 0)))
 
-;> (simulate eq2-ckt (init-config eq2-ckt '(0 1)) 5) =>
-;'(#hash((w . 0) (x . 0) (y . 1) (z . 0))
-;  #hash((w . 1) (x . 0) (y . 1) (z . 1))
-;  #hash((w . 1) (x . 0) (y . 1) (z . 0)))
+;> (simulate eq2-ckt (init-config eq2-ckt '(0 1)) 5)
+;(list
+; (list (entry 'x 0) (entry 'y 1) (entry 'z 0) (entry 'w 0))
+; (list (entry 'x 0) (entry 'y 1) (entry 'z 1) (entry 'w 1))
+; (list (entry 'x 0) (entry 'y 1) (entry 'z 0) (entry 'w 1)))
 
 ;**********************************************************
 
@@ -727,6 +823,7 @@
      (list config)]
     [else
      (cons config (simulate circuit (next-config circuit config) (- n 1)))]))
+;  "simulate is not defined yet")
 
 ;**********************************************************
 ; ** problem 8 ** (10 points)
@@ -734,37 +831,40 @@
 
 ; (final-config circuit config)
 
-; that takes a circuit and a configuration config for the circuit.  If
-; the circuit would eventually reach a stable configuration from
-; config, then (final-config circuit config) returns the stable
-; configuration of the circuit that would be reached.
+; that takes a circuit and a configuration config for the circuit.
+; If the circuit would eventually reach a stable configuration 
+; from config, then (final-config circuit config) returns the
+; stable configuration of the circuit that would be reached.
 
 ; Otherwise, (final-config circuit config) returns the symbol 'none.
 
 ; Examples
+;> (final-config clock-ckt (list (entry 'z 0)))
+;'none
 
-; (final-config clock-ckt (make-hash '((z . 0)))) => 'none
+;> (final-config eq1-ckt (list (entry 'x 1) (entry 'y 1) (entry 'z 0) (entry 'cx 0) (entry 'cy 0) (entry 't1 0) (entry 't2 0)))
+;(list (entry 'x 1) (entry 'y 1) (entry 'z 1) (entry 'cx 0) (entry 'cy 0) (entry 't1 1) (entry 't2 0))
 
-; (final-config eq1-ckt
-;	      (make-hash '((x . 1) (y . 1) (z . 0) (cx . 0)
-;			   (cy . 0) (t1 . 0) (t2 . 0)))) =>
-; (make-hash '((x . 1) (y . 1) (z . 1) (cx . 0)
-;    	     (cy . 0) (t1 . 1) (t2 . 0))))
+;> (final-config sel-ckt (list (entry 'x1 0) (entry 'x0 0) (entry 'y1 1) (entry 'y0 0) (entry 's 0) (entry 'z1 1) (entry 'z0 1) (entry 'sc 0) (entry 'u1 1) (entry 'v1 1) (entry 'u0 0) (entry 'v0 1)))
+; (list
+;  (entry 'x1 0)
+;  (entry 'x0 0)
+;  (entry 'y1 1)
+;  (entry 'y0 0)
+;  (entry 's 0)
+;  (entry 'z1 0)
+;  (entry 'z0 0)
+;  (entry 'sc 1)
+;  (entry 'u1 0)
+;  (entry 'v1 0)
+;  (entry 'u0 0)
+;  (entry 'v0 0))
 
-; (final-config sel-ckt 
-;	      (make-hash '((x1 . 0) (x0 . 0) (y1 . 1) (y0 . 0)
-;			   (s . 0) (z1 . 1) (z0 . 1) (sc . 0)
-;			   (u1 . 1) (v1 . 1) (u0 . 0) (v0 . 1)))) =>
-;(make-hash '((x1 . 0) (x0 . 0) (y1 . 1) (y0 . 0)
-;	     (s . 0) (z1 . 0) (z0 . 0) (sc . 1)
-;	     (u1 . 0) (v1 . 0) (u0 . 0) (v0 . 0)))
-      
-; (final-config latch-ckt (make-hash '((x . 1) (y . 1) (q . 0) (u . 0)))) =>
-;       'none
+;> (final-config latch-ckt (list (entry 'x 1) (entry 'y 1) (entry 'q 0) (entry 'u 0)))
+;'none
 
-; (final-config latch-ckt (make-hash '((x . 1) (y . 1) (q . 0) (u . 1)))) =>
-; (make-hash '((x . 1) (y . 1) (q . 0) (u . 1))))
-
+;> (final-config latch-ckt (list (entry 'x 1) (entry 'y 1) (entry 'q 0) (entry 'u 1)))
+;(list (entry 'x 1) (entry 'y 1) (entry 'q 0) (entry 'u 1))
 
 ;**********************************************************
 
@@ -777,7 +877,7 @@
      'none]))
 
 ;**********************************************************
-; ** problem 9 ** (10 points)
+; ** problem 9 ** (5 points)
 ; Define a 4-bit ripple-carry adder circuit as described in lecture
 ; using the circuit representation developed above.
 
@@ -800,8 +900,7 @@
 ; (output-values add-ckt (final-config add-ckt (init-config add-ckt '(1 0 0 1 1 1 0 1)))) => '(1 0 1 1 0)
 ; (output-values add-ckt (final-config add-ckt (init-config add-ckt '(0 1 1 1 0 1 1 0)))) => '(0 1 1 0 1)
 
-; For the last two tests, your procedures output-values, final-config,
-; init-config must be working.
+; For the last two tests, your procedures output-values, final-config, init-config must be working.
 
 ; You may construct the circuit entirely by hand,
 ; or you may choose to write procedures to construct your circuit.
@@ -853,12 +952,12 @@
           (ckt-gates (fa-ckt-maker '(x2 y2 c2) '(z2 c3) '(A2 B2 C2 D2 E2)))
           (append
            (ckt-gates (fa-ckt-maker '(x3 y3 c3) '(z3 z4) '(A3 B3 C3 D3 E3)))))))))
+;  "add-ckt is not defined yet")
 
 ;**********************************************************
 ; ** problem 10 ** (5 points)
-
-; Define a D-flipflop as described in lecture, using the given
-; representation of circuits.  Please name it: dff-ckt.
+; Define a D-flipflop as described in lecture, using the given representation of circuits.
+; Please name it: dff-ckt.
 
 ; It has inputs:  s, d (in order) and outputs q, qc (in order)
 
@@ -882,15 +981,16 @@
     (gate 'nand '(s nd) 'y)
     (gate 'nand '(q y) 'qc)
     (gate 'nand '(qc x) 'q))))
+    
+;  "dff-ckt is not defined yet")
 
 ;**********************************************************
 ; ** problem 11 ** (5 points)
-
-; Design a circuit using the given representation that has no inputs
-; and one output 't.  When the circuit is started in the initial (all
-; zero) configuration, after a few configurations, the output is 1 for
-; one step, then 0 for 4 steps, then 1 for one step, then 0 for 4
-; steps, then 1 for one step, and so on.
+; Design a circuit using the given representation that has
+; no inputs and one output 't.  When the circuit is started
+; in the initial (all zero) configuration, after a few configurations,
+; the output is 1 for one step, then 0 for 4 steps, then 1 for
+; one step, then 0 for 4 steps, then 1 for one step, and so on.
 
 ; Please name your circuit timing-ckt.
 
@@ -915,14 +1015,14 @@
     (gate 'or '(f b) 'f)
     (gate 'xor  '(a e) 'g)
     (gate 'and '(g f) 't))))
+;  "timing-ckt is not defined yet")
 
 ;**********************************************************
 ; ** problem 12 ** (5 points)
-
-; Design a circuit using the given representation that has no inputs
-; and one output 't.  When the circuit is started in the initial (all
-; zero) configuration, after a few configurations, the output is 1 for
-; one step, then 0 forever after.
+; Design a circuit using the given representation that has
+; no inputs and one output 't.  When the circuit is started
+; in the initial (all zero) configuration, after a few configurations,
+; the output is 1 for one step, then 0 forever after.
 
 ; Please name your circuit one-one-ckt.
 
@@ -931,7 +1031,8 @@
 ; (ckt-inputs one-one-ckt) => '()
 ; (ckt-outputs one-one-ckt) => '(t)
 ;> (map (lambda (config) (output-values one-one-ckt config)) (simulate one-one-ckt (init-config one-one-ckt '()) 20))
-;'((0) (0) (0) (0) (0) (1) (0) (0) (0) (0) (1) (0) (0) (0) (0) (1) (0) (0) (0) (0) (1))
+;'((0) (0) (1) (0) (0) (0) (0) (0) (0) (0) (0) (0) (0) (0) (0) (0) (0) (0) (0) (0) (0))
+
 ;**********************************************************
 
 (define one-one-ckt
@@ -943,6 +1044,8 @@
     (gate 'not '(a) 'b)
     (gate 'or '(b b) 'c)
     (gate 'xor '(b c) 't))))
+;  "one-one-ckt is not defined yet")
+
 
 ; ********************************************************
 ; ********  testing, testing. 1, 2, 3 ....
@@ -958,9 +1061,9 @@
 			      expected))
 		(prefix (if (equal? got expected)
 			    '***OK***
-			    'X)))
+			    '***X***)))
 	   (list 'testing name prefix 'got: got 'expected: expected)))))
-
+	
 (define (test name got expected)
   (cond (*testing-flag*
 	 (let* ((OK (if (procedure? expected)
@@ -1006,7 +1109,6 @@
 (test 'find-gate (find-gate 'w eq2-ckt) (gate 'xor '(x y) 'w))
 (test 'find-gate (find-gate 'y sel-ckt) #f)
 
-
 (test 'ha-ckt (good-circuit? ha-ckt) #t)
 (test 'fa-ckt (good-circuit? fa-ckt) #t)
 (test 'ha-ckt (ckt-inputs ha-ckt) '(x y))
@@ -1020,123 +1122,164 @@
       '(0 1))
 (test 'fa-ckt (output-values fa-ckt (final-config fa-ckt (init-config fa-ckt '(1 1 1)))) '(1 1))
 
-
-(test 'next-value (next-value 'cx eq1-ckt eq1-config1x) 1)
-(test 'next-value (next-value 't2 eq1-ckt eq1-config1x) 0)
-(test 'next-value (next-value 'z eq1-ckt eq1-config2x) 0)
-(test 'next-value (next-value 'x0 sel-ckt sel-config1x) 1)
-(test 'next-value (next-value 'v1 sel-ckt sel-config1x) 1)
-(test 'next-value (next-value 'v0 sel-ckt sel-config2x) 0)
-
-
-(test 'next-config (next-config eq1-ckt eq1-config1x)
-      (make-hash '((x . 0) (y . 1) (z . 0) (cx . 1) (cy . 0) (t1
-. 0) (t2 . 0))))
-
-(test 'next-config (next-config eq1-ckt eq1-config2x)
-      (make-hash '((x . 0) (y . 0) (z . 0) (cx . 1) (cy . 1) (t1 . 0) (t2 . 1))))
-
-(test 'next-config (next-config sel-ckt sel-config1x)
-      (make-hash '((x1 . 0) (x0 . 1) (y1 . 1) (y0 . 0) (s . 1) (z1 . 0) (z0 . 0)
-	    (sc . 0) (u1 . 0) (v1 . 1) (u0 . 0) (v0 . 0))))
-
-(test 'next-config (next-config sel-ckt (next-config sel-ckt sel-config1x))
-      (make-hash '((x1 . 0) (x0 . 1) (y1 . 1) (y0 . 0) (s . 1) (z1 . 1) (z0 . 0)
-	    (sc . 0) (u1 . 0) (v1 . 1) (u0 . 0) (v0 . 0))))
-
-(test 'next-config (next-config latch-ckt latch-config1x)
-      (make-hash '((x . 0) (y . 0) (q . 1) (u . 1))))
+(test 'next-value (next-value 'cx eq1-ckt eq1-config1) 1)
+(test 'next-value (next-value 't2 eq1-ckt eq1-config1) 0)
+(test 'next-value (next-value 'z eq1-ckt eq1-config2) 0)
+(test 'next-value (next-value 'x0 sel-ckt sel-config1) 1)
+(test 'next-value (next-value 'v1 sel-ckt sel-config1) 1)
+(test 'next-value (next-value 'v0 sel-ckt sel-config2) 0)
 
 
-(test 'next-config (next-config latch-ckt latch-config2x)
-      (make-hash '((x . 0) (y . 1) (q . 1) (u . 0))))
+(test 'next-config (next-config eq1-ckt eq1-config1)
+      (list (entry 'x 0) (entry 'y 1) (entry 'z 0) (entry 'cx 1) (entry 'cy 0) (entry 't1 0) (entry 't2 0)))
+
+(test 'next-config (next-config eq1-ckt eq1-config2)
+      (list (entry 'x 0) (entry 'y 0) (entry 'z 0) (entry 'cx 1) (entry 'cy 1) (entry 't1 0) (entry 't2 1)))
+
+(test 'next-config (next-config sel-ckt sel-config1)
+      (list
+       (entry 'x1 0)
+       (entry 'x0 1)
+       (entry 'y1 1)
+       (entry 'y0 0)
+       (entry 's 1)
+       (entry 'z1 0)
+       (entry 'z0 0)
+       (entry 'sc 0)
+       (entry 'u1 0)
+       (entry 'v1 1)
+       (entry 'u0 0)
+       (entry 'v0 0)))
+
+(test 'next-config (next-config sel-ckt (next-config sel-ckt sel-config1))
+      (list
+       (entry 'x1 0)
+       (entry 'x0 1)
+       (entry 'y1 1)
+       (entry 'y0 0)
+       (entry 's 1)
+       (entry 'z1 1)
+       (entry 'z0 0)
+       (entry 'sc 0)
+       (entry 'u1 0)
+       (entry 'v1 1)
+       (entry 'u0 0)
+       (entry 'v0 0)))
+
+(test 'next-config (next-config latch-ckt latch-config1) (list (entry 'x 0) (entry 'y 0) (entry 'q 1) (entry 'u 1)))
+
+(test 'next-config (next-config latch-ckt latch-config2) (list (entry 'x 0) (entry 'y 1) (entry 'q 1) (entry 'u 0)))
 
 
-
-(test 'stable? (stable? eq1-ckt (make-hash '((x . 0) (y . 0) (z . 1)
-(cx . 1) (cy . 1) (t1 . 0) (t2 . 1)))) #t)
-
-(test 'stable? (stable? eq1-ckt (make-hash '((x . 0) (y . 0) (z . 0)
-(cx . 1) (cy . 0) (t1 . 1) (t2 . 0)))) #f)
+(test 'stable? (stable? eq1-ckt (list (entry 'x 0) (entry 'y 0) (entry 'z 1) (entry 'cx 1) (entry 'cy 1) (entry 't1 0) (entry 't2 1))) #t)
+(test 'stable? (stable? eq1-ckt (list (entry 'x 0) (entry 'y 0) (entry 'z 0) (entry 'cx 1) (entry 'cy 0) (entry 't1 1) (entry 't2 0))) #f)
 
 (test 'all-stable-configs (all-stable-configs eq2-ckt)
       (list
-       (make-hash '((x . 0) (y . 0) (z . 1) (w . 0)))
-       (make-hash '((x . 0) (y . 1) (z . 0) (w . 1)))
-       (make-hash '((x . 1) (y . 0) (z . 0) (w . 1)))
-       (make-hash '((x . 1) (y . 1) (z . 1) (w . 0)))))
+       (list (entry 'x 0) (entry 'y 0) (entry 'z 1) (entry 'w 0))
+       (list (entry 'x 0) (entry 'y 1) (entry 'z 0) (entry 'w 1))
+       (list (entry 'x 1) (entry 'y 0) (entry 'z 0) (entry 'w 1))
+       (list (entry 'x 1) (entry 'y 1) (entry 'z 1) (entry 'w 0))))
 
 (test 'all-stable-configs (all-stable-configs seq-or-ckt)
+      (list (list (entry 'x 0) (entry 'z 0)) (list (entry 'x 0) (entry 'z 1)) (list (entry 'x 1) (entry 'z 1))))
+
+(test 'output-values (output-values eq1-ckt eq1-config2) '(0))
+(test 'output-values (output-values latch-ckt latch-config2) '(1 0))
+(test 'init-config (init-config eq1-ckt '(1 0)) (list (entry 'x 1) (entry 'y 0) (entry 'z 0) (entry 'cx 0) (entry 'cy 0) (entry 't1 0) (entry 't2 0)))
+(test 'init-config (init-config clock-ckt '()) (list (entry 'z 0)))
+
+
+(test 'simulate (simulate clock-ckt (list (entry 'z 0)) 4)
       (list
-       (make-hash '((x . 0) (z . 0)))
-       (make-hash '((x . 0) (z . 1)))
-       (make-hash '((x . 1) (z . 1)))))
+       (list (entry 'z 0))
+       (list (entry 'z 1))
+       (list (entry 'z 0))
+       (list (entry 'z 1))
+       (list (entry 'z 0))))
 
-(test 'output-values (output-values eq1-ckt eq1-config2x) '(0))
-(test 'output-values (output-values latch-ckt latch-config2x) '(1 0))
-
-(test 'init-config (init-config eq1-ckt '(1 0))
-      (make-hash '((x . 1) (y . 0) (z . 0) (cx . 0) (cy . 0) (t1 . 0) (t2 . 0))))
-
-(test 'init-config (init-config clock-ckt '()) (make-hash '((z . 0))))
-
-(test 'simulate (simulate clock-ckt (make-hash '((z . 0))) 4)
-      (list (make-hash '((z . 0)))
-	    (make-hash '((z . 1)))
-	    (make-hash '((z . 0)))
-	    (make-hash '((z . 1)))
-	    (make-hash '((z . 0)))))
-
-(test 'simulate (simulate eq1-ckt eq1-config1x 5)
+(test 'simulate (simulate eq1-ckt eq1-config1 5)
       (list
-       (make-hash '((x . 0) (y . 1) (z . 0) (cx . 0) (cy . 0) (t1 . 0) (t2 . 0)))
-       (make-hash '((x . 0) (y . 1) (z . 0) (cx . 1) (cy . 0) (t1 . 0) (t2 . 0)))))
+       (list (entry 'x 0) (entry 'y 1) (entry 'z 0) (entry 'cx 0) (entry 'cy 0) (entry 't1 0) (entry 't2 0))
+       (list (entry 'x 0) (entry 'y 1) (entry 'z 0) (entry 'cx 1) (entry 'cy 0) (entry 't1 0) (entry 't2 0))))
 
-(test 'simulate (simulate sel-ckt sel-config1x 5)
+(test 'simulate (simulate sel-ckt sel-config1 5)
       (list
-       (make-hash '((x1 . 0) (x0 . 1) (y1 . 1) (y0 . 0) (s . 1) (z1 . 0)
-		    (z0 . 0) (sc . 0) (u1 . 0) (v1 . 0) (u0 . 0) (v0 . 0)))
-       (make-hash '((x1 . 0) (x0 . 1) (y1 . 1) (y0 . 0) (s . 1) (z1 . 0)
-		    (z0 . 0) (sc . 0) (u1 . 0) (v1 . 1) (u0 . 0) (v0 . 0)))
-       (make-hash '((x1 . 0) (x0 . 1) (y1 . 1) (y0 . 0) (s . 1) (z1 . 1)
-		    (z0 . 0) (sc . 0) (u1 . 0) (v1 . 1) (u0 . 0) (v0 . 0)))))
+       (list
+	(entry 'x1 0)
+	(entry 'x0 1)
+	(entry 'y1 1)
+	(entry 'y0 0)
+	(entry 's 1)
+	(entry 'z1 0)
+	(entry 'z0 0)
+	(entry 'sc 0)
+	(entry 'u1 0)
+	(entry 'v1 0)
+	(entry 'u0 0)
+	(entry 'v0 0))
+       (list
+	(entry 'x1 0)
+	(entry 'x0 1)
+	(entry 'y1 1)
+	(entry 'y0 0)
+	(entry 's 1)
+	(entry 'z1 0)
+	(entry 'z0 0)
+	(entry 'sc 0)
+	(entry 'u1 0)
+	(entry 'v1 1)
+	(entry 'u0 0)
+	(entry 'v0 0))
+       (list
+	(entry 'x1 0)
+	(entry 'x0 1)
+	(entry 'y1 1)
+	(entry 'y0 0)
+	(entry 's 1)
+	(entry 'z1 1)
+	(entry 'z0 0)
+	(entry 'sc 0)
+	(entry 'u1 0)
+	(entry 'v1 1)
+	(entry 'u0 0)
+	(entry 'v0 0))))
 
-(test 'simulate (simulate latch-ckt latch-config2x 3)
-      (list
-       (make-hash '((x . 0) (y . 1) (q . 1) (u . 0)))))
+(test 'simulate (simulate latch-ckt latch-config2 3)
+      (list (list (entry 'x 0) (entry 'y 1) (entry 'q 1) (entry 'u 0))))
 
 (test 'simulate (simulate eq2-ckt (init-config eq2-ckt '(0 1)) 5)
       (list
-       (make-hash '((x . 0) (y . 1) (z . 0) (w . 0)))
-       (make-hash '((x . 0) (y . 1) (z . 1) (w . 1)))
-       (make-hash '((x . 0) (y . 1) (z . 0) (w . 1)))))
+       (list (entry 'x 0) (entry 'y 1) (entry 'z 0) (entry 'w 0))
+       (list (entry 'x 0) (entry 'y 1) (entry 'z 1) (entry 'w 1))
+       (list (entry 'x 0) (entry 'y 1) (entry 'z 0) (entry 'w 1))))
 
-(test 'final-config (final-config clock-ckt (make-hash '((z . 0))))
+(test 'final-config (final-config clock-ckt (list (entry 'z 0)))
       'none)
 
-(test 'final-config (final-config eq1-ckt
-				  (make-hash '((x . 1) (y . 1) (z . 0) (cx . 0)
-					       (cy . 0) (t1 . 0) (t2 . 0))))
-      (make-hash '((x . 1) (y . 1) (z . 1) (cx . 0)
-		   (cy . 0) (t1 . 1) (t2 . 0))))
+(test 'final-config (final-config eq1-ckt (list (entry 'x 1) (entry 'y 1) (entry 'z 0) (entry 'cx 0) (entry 'cy 0) (entry 't1 0) (entry 't2 0)))
+      (list (entry 'x 1) (entry 'y 1) (entry 'z 1) (entry 'cx 0) (entry 'cy 0) (entry 't1 1) (entry 't2 0)))
 
-(test 'final-config (final-config
-		     sel-ckt 
-		     (make-hash '((x1 . 0) (x0 . 0) (y1 . 1) (y0 . 0)
-				  (s . 0) (z1 . 1) (z0 . 1) (sc . 0)
-				  (u1 . 1) (v1 . 1) (u0 . 0) (v0 . 1))))
-      (make-hash '((x1 . 0) (x0 . 0) (y1 . 1) (y0 . 0)
-		   (s . 0) (z1 . 0) (z0 . 0) (sc . 1)
-		   (u1 . 0) (v1 . 0) (u0 . 0) (v0 . 0))))
+(test 'final-config (final-config sel-ckt (list (entry 'x1 0) (entry 'x0 0) (entry 'y1 1) (entry 'y0 0) (entry 's 0) (entry 'z1 1) (entry 'z0 1) (entry 'sc 0) (entry 'u1 1) (entry 'v1 1) (entry 'u0 0) (entry 'v0 1)))
+      (list
+       (entry 'x1 0)
+       (entry 'x0 0)
+       (entry 'y1 1)
+       (entry 'y0 0)
+       (entry 's 0)
+       (entry 'z1 0)
+       (entry 'z0 0)
+       (entry 'sc 1)
+       (entry 'u1 0)
+       (entry 'v1 0)
+       (entry 'u0 0)
+       (entry 'v0 0)))
       
-(test 'final-config (final-config latch-ckt
-				  (make-hash '((x . 1) (y . 1) (q . 0) (u . 0))))
+(test 'final-config (final-config latch-ckt (list (entry 'x 1) (entry 'y 1) (entry 'q 0) (entry 'u 0)))
       'none)
 
-(test 'final-config (final-config
-		     latch-ckt
-		     (make-hash '((x . 1) (y . 1) (q . 0) (u . 1))))
-      (make-hash '((x . 1) (y . 1) (q . 0) (u . 1))))
+(test 'final-config (final-config latch-ckt (list (entry 'x 1) (entry 'y 1) (entry 'q 0) (entry 'u 1)))
+      (list (entry 'x 1) (entry 'y 1) (entry 'q 0) (entry 'u 1)))
 
 
 (test 'add-ckt (good-circuit? add-ckt) #t)
@@ -1166,5 +1309,5 @@
       '((0) (0) (1) (0) (0) (0) (0) (0) (0) (0) (0) (0) (0) (0) (0) (0) (0) (0) (0) (0) (0)))
 
 
-
 ;**************  end of hw # 5  ************************************
+

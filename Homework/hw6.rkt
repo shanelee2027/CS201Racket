@@ -617,9 +617,18 @@ hello world
 ;************************************************************
 
 (define (do-input config)
-  empty)
+  (let ((value (begin (display "input = ") (read))))
+    (conf (list
+           (entry 'acc (int->signed-bits (remainder value (expt 2 15))))
+           (list-ref (conf-cpu config) 1)
+           (list-ref (conf-cpu config) 2)
+           (list-ref (conf-cpu config) 3))
+          (conf-ram config))))
 
 (define (do-output config)
+  (display "output = ")
+  (display (signed-bits->int (entry-value (list-ref (conf-cpu config) 0))))
+  (newline)
   empty)
 
 ;************************************************************
@@ -678,16 +687,63 @@ hello world
 ;************************************************************
 
 (define (do-jump address config)
-  empty)
+  (conf (list
+         (list-ref (conf-cpu config) 0)
+         (entry 'pc (int->bits-width address 12))
+         (list-ref (conf-cpu config) 2)
+         (list-ref (conf-cpu config) 3))
+        (conf-ram config)))
 
 (define (do-skipzero config)
-  empty)
+  (cond
+    [(equal? 0 (signed-bits->int (entry-value (list-ref (conf-cpu config) 0))))
+     (conf (list
+         (list-ref (conf-cpu config) 0)
+         (entry 'pc (int->bits-width (remainder (+ 2 (bits->int (entry-value (list-ref (conf-cpu config) 1)))) 4096) 12))
+         (list-ref (conf-cpu config) 2)
+         (list-ref (conf-cpu config) 3))
+        (conf-ram config))]
+    [else
+     (conf (list
+         (list-ref (conf-cpu config) 0)
+         (entry 'pc (int->bits-width (remainder (+ 1 (bits->int (entry-value (list-ref (conf-cpu config) 1)))) 4096) 12))
+         (list-ref (conf-cpu config) 2)
+         (list-ref (conf-cpu config) 3))
+        (conf-ram config))]))
 
 (define (do-skippos config)
-  empty)
+  (cond
+    [(< 0 (signed-bits->int (entry-value (list-ref (conf-cpu config) 0))))
+     (conf (list
+         (list-ref (conf-cpu config) 0)
+         (entry 'pc (int->bits-width (remainder (+ 2 (bits->int (entry-value (list-ref (conf-cpu config) 1)))) 4096) 12))
+         (list-ref (conf-cpu config) 2)
+         (list-ref (conf-cpu config) 3))
+        (conf-ram config))]
+    [else
+     (conf (list
+         (list-ref (conf-cpu config) 0)
+         (entry 'pc (int->bits-width (remainder (+ 1 (bits->int (entry-value (list-ref (conf-cpu config) 1)))) 4096) 12))
+         (list-ref (conf-cpu config) 2)
+         (list-ref (conf-cpu config) 3))
+        (conf-ram config))]))
 
 (define (do-skiperr config)
-  empty)
+  (cond
+    [(equal? 0 (first (entry-value (list-ref (conf-cpu config) 1))))
+     (conf (list
+         (list-ref (conf-cpu config) 0)
+         (entry 'pc (int->bits-width (remainder (+ 2 (bits->int (entry-value (list-ref (conf-cpu config) 1)))) 4096) 12))
+         (list-ref (conf-cpu config) 2)
+         (entry 'aeb '(0)))
+        (conf-ram config))]
+    [else
+     (conf (list
+         (list-ref (conf-cpu config) 0)
+         (entry 'pc (int->bits-width (remainder (+ 1 (bits->int (entry-value (list-ref (conf-cpu config) 1)))) 4096) 12))
+         (list-ref (conf-cpu config) 2)
+         (entry 'aeb '(0)))
+        (conf-ram config))]))
            
 ;************************************************************
 ; ** problem 7 ** (10 points)
@@ -761,7 +817,12 @@ hello world
 ;************************************************************
 
 (define (do-loadi address config)
-  empty)
+  (conf (list
+         (entry 'acc (ram-read (bits->int (extract 4 15 (ram-read address (conf-ram config)))) (conf-ram config)))
+         (list-ref (conf-cpu config) 1)
+         (list-ref (conf-cpu config) 2)
+         (list-ref (conf-cpu config) 3))
+        (conf-ram config)))
 
 (define (do-storei address config)
   empty)

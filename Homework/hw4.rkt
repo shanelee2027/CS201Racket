@@ -538,7 +538,8 @@
 
 (define (satisfiable? exp)
   (ormap (lambda (entry1)
-           (equal? 1 (entry-value entry1))) (tt-rows (truth-table exp))))
+           (equal? 1 (entry-value entry1)))
+         (tt-rows (truth-table exp))))
 
 ; Copy of truth-table above, but allows you to choose a list of variables ahead of time
 ; The purpose is to be able to create truth tables containing variables like 'a for an expression such as 0,

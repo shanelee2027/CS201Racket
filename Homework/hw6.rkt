@@ -825,10 +825,21 @@ hello world
         (conf-ram config)))
 
 (define (do-storei address config)
-  empty)
+  (conf (conf-cpu config)
+        (ram-write (bits->int (extract 4 15 (ram-read address (conf-ram config)))) (entry-value (list-ref (conf-cpu config) 0)) (conf-ram config))))
 
 (define (do-shift address config)
-  empty)
+  (define shift-amount (signed-bits->int (ram-read address (conf-ram config))))
+  (conf (list
+         (entry 'acc (map (lambda (x)
+                            (if (or (< (+ x shift-amount) 0) (> (+ x shift-amount) 15))
+                                0
+                                (list-ref (entry-value (list-ref (conf-cpu config) 0)) (+ x shift-amount))))
+                          (build-list 16 values)))
+         (list-ref (conf-cpu config) 1)
+         (list-ref (conf-cpu config) 2)
+         (list-ref (conf-cpu config) 3))
+        (conf-ram config)))
 
 ;************************************************************
 ; ** problem 8 ** (10 points)
@@ -868,10 +879,30 @@ hello world
 ;************************************************************
 
 (define (do-and address config)
-  empty)
+  (conf (list
+         (entry 'acc (map (lambda (a b)
+                            (if (and (equal? 1 a) (equal? 1 b))
+                                1
+                                0))
+                          (entry-value (list-ref (conf-cpu config) 0))
+                          (ram-read address (conf-ram config))))
+         (list-ref (conf-cpu config) 1)
+         (list-ref (conf-cpu config) 2)
+         (list-ref (conf-cpu config) 3))
+        (conf-ram config)))
 
 (define (do-xor address config)
-  empty)
+  (conf (list
+         (entry 'acc (map (lambda (a b)
+                            (if (or (and (equal? 1 a) (equal? 0 b)) (and (equal? 0 a) (equal? 1 b)))
+                                1
+                                0))
+                          (entry-value (list-ref (conf-cpu config) 0))
+                          (ram-read address (conf-ram config))))
+         (list-ref (conf-cpu config) 1)
+         (list-ref (conf-cpu config) 2)
+         (list-ref (conf-cpu config) 3))
+        (conf-ram config)))
 
 ;************************************************************
 ; ** problem 9 ** (10 points)
@@ -962,8 +993,122 @@ hello world
 
 ;************************************************************
 
+; halt, load, store, add, sub, input, output, jump
+; skipzero, skippos, skiperr, loadi, storei, shift, and, xor.
+
 (define (next-config config)
-  empty)
+  (define instruct-num (bits->int (extract 0 3 (ram-read (bits->int (entry-value (list-ref (conf-cpu config) 1))) (conf-ram config)))))
+  (define address (bits->int (extract 4 15 (ram-read (bits->int (entry-value (list-ref (conf-cpu config) 1))) (conf-ram config)))))
+  (cond
+    [(equal? 0 (first (entry-value (list-ref (conf-cpu config) 2))))
+     config]
+    [(equal? 0 instruct-num)
+     (conf (list
+            (list-ref (conf-cpu config) 0)
+            (list-ref (conf-cpu config) 1)
+            (entry 'rf '(0))
+            (list-ref (conf-cpu config) 3))
+           (conf-ram config))]
+    [(equal? 1 instruct-num)
+     (define newconfig (do-load address config))
+     (conf (list
+            (list-ref (conf-cpu newconfig) 0)
+            (entry 'pc (int->bits-width (remainder (+ (bits->int (entry-value (list-ref (conf-cpu newconfig) 1))) 1) 4096) 12))
+            (list-ref (conf-cpu newconfig) 2)
+            (list-ref (conf-cpu newconfig) 3))
+           (conf-ram newconfig))]
+    [(equal? 2 instruct-num)
+     (define newconfig (do-store address config))
+     (conf (list
+            (list-ref (conf-cpu newconfig) 0)
+            (entry 'pc (int->bits-width (remainder (+ (bits->int (entry-value (list-ref (conf-cpu newconfig) 1))) 1) 4096) 12))
+            (list-ref (conf-cpu newconfig) 2)
+            (list-ref (conf-cpu newconfig) 3))
+           (conf-ram newconfig))]
+    [(equal? 3 instruct-num)
+     (define newconfig (do-add address config))
+     (conf (list
+            (list-ref (conf-cpu newconfig) 0)
+            (entry 'pc (int->bits-width (remainder (+ (bits->int (entry-value (list-ref (conf-cpu newconfig) 1))) 1) 4096) 12))
+            (list-ref (conf-cpu newconfig) 2)
+            (list-ref (conf-cpu newconfig) 3))
+           (conf-ram newconfig))]
+    [(equal? 4 instruct-num)
+     (define newconfig (do-sub address config))
+     (conf (list
+            (list-ref (conf-cpu newconfig) 0)
+            (entry 'pc (int->bits-width (remainder (+ (bits->int (entry-value (list-ref (conf-cpu newconfig) 1))) 1) 4096) 12))
+            (list-ref (conf-cpu newconfig) 2)
+            (list-ref (conf-cpu newconfig) 3))
+           (conf-ram newconfig))]
+    [(equal? 5 instruct-num)
+     (define newconfig (do-input config))
+     (conf (list
+            (list-ref (conf-cpu newconfig) 0)
+            (entry 'pc (int->bits-width (remainder (+ (bits->int (entry-value (list-ref (conf-cpu newconfig) 1))) 1) 4096) 12))
+            (list-ref (conf-cpu newconfig) 2)
+            (list-ref (conf-cpu newconfig) 3))
+           (conf-ram newconfig))]
+    [(equal? 6 instruct-num)
+     (define newconfig (do-output config))
+     (conf (list
+            (list-ref (conf-cpu newconfig) 0)
+            (entry 'pc (int->bits-width (remainder (+ (bits->int (entry-value (list-ref (conf-cpu newconfig) 1))) 1) 4096) 12))
+            (list-ref (conf-cpu newconfig) 2)
+            (list-ref (conf-cpu newconfig) 3))
+           (conf-ram newconfig))]
+    [(equal? 7 instruct-num)
+     (define newconfig (do-jump address config))
+     newconfig]
+    [(equal? 8 instruct-num)
+     (define newconfig (do-skipzero address config))
+     newconfig]
+    [(equal? 9 instruct-num)
+     (define newconfig (do-skippos address config))
+     newconfig]
+    [(equal? 10 instruct-num)
+     (define newconfig (do-skiperr address config))
+     newconfig]
+    [(equal? 11 instruct-num)
+     (define newconfig (do-loadi address config))
+     (conf (list
+            (list-ref (conf-cpu newconfig) 0)
+            (entry 'pc (int->bits-width (remainder (+ (bits->int (entry-value (list-ref (conf-cpu newconfig) 1))) 1) 4096) 12))
+            (list-ref (conf-cpu newconfig) 2)
+            (list-ref (conf-cpu newconfig) 3))
+           (conf-ram newconfig))]
+    [(equal? 12 instruct-num)
+     (define newconfig (do-storei address config))
+     (conf (list
+            (list-ref (conf-cpu newconfig) 0)
+            (entry 'pc (int->bits-width (remainder (+ (bits->int (entry-value (list-ref (conf-cpu newconfig) 1))) 1) 4096) 12))
+            (list-ref (conf-cpu newconfig) 2)
+            (list-ref (conf-cpu newconfig) 3))
+           (conf-ram newconfig))]
+    [(equal? 13 instruct-num)
+     (define newconfig (do-shift address config))
+     (conf (list
+            (list-ref (conf-cpu newconfig) 0)
+            (entry 'pc (int->bits-width (remainder (+ (bits->int (entry-value (list-ref (conf-cpu newconfig) 1))) 1) 4096) 12))
+            (list-ref (conf-cpu newconfig) 2)
+            (list-ref (conf-cpu newconfig) 3))
+           (conf-ram newconfig))]
+    [(equal? 14 instruct-num)
+     (define newconfig (do-and address config))
+     (conf (list
+            (list-ref (conf-cpu newconfig) 0)
+            (entry 'pc (int->bits-width (remainder (+ (bits->int (entry-value (list-ref (conf-cpu newconfig) 1))) 1) 4096) 12))
+            (list-ref (conf-cpu newconfig) 2)
+            (list-ref (conf-cpu newconfig) 3))
+           (conf-ram newconfig))]
+    [(equal? 15 instruct-num)
+     (define newconfig (do-xor address config))
+     (conf (list
+            (list-ref (conf-cpu newconfig) 0)
+            (entry 'pc (int->bits-width (remainder (+ (bits->int (entry-value (list-ref (conf-cpu newconfig) 1))) 1) 4096) 12))
+            (list-ref (conf-cpu newconfig) 2)
+            (list-ref (conf-cpu newconfig) 3))
+           (conf-ram newconfig))]))
 
 ;************************************************************
 ; ** problem 10 ** (10 points)
@@ -1114,17 +1259,86 @@ hello world
 ; initial configuration construction
 
 (define (init-config lst)
-  empty)
+  (conf (list
+         (entry 'acc (build-list 16 (lambda (x) 0)))
+         (entry 'pc (build-list 12 (lambda (x) 0)))
+         (entry 'rf '(1))
+         (entry 'aeb '(0)))
+        lst))
 
 ; symbol table construction
 
 (define (symbol-table prog)
-  empty)
+  (symbol-table-helper prog 0))
+
+; helper function for symbol-table that keeps track of the index
+(define (symbol-table-helper prog i)
+  (cond
+    [(empty? prog)
+     '()]
+    [(equal? 3 (length (first prog)))
+     (cons (entry (first (first prog)) i) (symbol-table-helper (rest prog) (+ 1 i)))]
+    [else
+     (symbol-table-helper (rest prog) (+ 1 i))]))
+     
 
 ; assemble program
 
 (define (assemble prog)
-  empty)
+  (assemble-helper prog (symbol-table prog)))
+
+; helper function for assemble that keeps track of the symbol-table of prog
+(define (assemble-helper prog st)
+  (cond
+    [(empty? prog)
+     '()]
+    [(equal? 3 (length (first prog)))
+     (define line (first prog))
+     (cond
+       [(equal? 'data (second line))
+        (if (symbol? (third line))
+            (cons (int->signed-bits (entry-value (findf (lambda (entry1)
+                                                         (equal? (third line) (entry-key entry1)))
+                                                       st)))
+                  (assemble-helper (rest prog) st))
+            (cons (int->signed-bits (third line))
+                  (assemble-helper (rest prog) st)))]
+       [else
+        (cons (append (entry-value (findf (lambda (entry1)
+                                            (equal? (second line) (entry-key entry1)))
+                                          opcode-table))
+                      (if (symbol? (third line))
+                                   (int->bits-width (entry-value (findf (lambda (entry1)
+                                                                         (equal? (third line) (entry-key entry1)))
+                                                                       st))
+                                                   12)
+                                   (int->bits-width (third line) 12)))
+              (assemble-helper (rest prog) st))])]
+    [else
+     (define line (first prog))
+     (cond
+       [(equal? 'data (first line))
+        (if (symbol? (second line))
+            (cons (int->signed-bits (entry-value (findf (lambda (entry1)
+                                                          (equal? (second line) (entry-key entry1)))
+                                                        st)))
+                  (assemble-helper (rest prog) st))
+            (cons (int->signed-bits (second line))
+                  (assemble-helper (rest prog) st)))]
+       [else
+        (cons (append (entry-value (findf (lambda (entry1)
+                                            (equal? (first line) (entry-key entry1)))
+                                          opcode-table))
+                      (if (symbol? (second line))
+                          (int->bits-width (entry-value (findf (lambda (entry1)
+                                                                 (equal? (second line) (entry-key entry1)))
+                                                               st))
+                                           12)
+                          (int->bits-width (second line) 12)))
+              (assemble-helper (rest prog) st))])]))
+            
+            
+        
  
 ; table of symbolic opcodes
 

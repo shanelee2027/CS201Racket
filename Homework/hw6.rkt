@@ -36,7 +36,7 @@
 ; Modify the following definition to reflect the number of
 ; hours you spent on this assignment.
 
-(define hours 3)
+(define hours 7)
 
 ; ********************************************************
 ; ** problem 00 ** (1 fairly easy point)
@@ -521,12 +521,12 @@ hello world
 
 ; converts integers into 16 bit signed numbers, returns false if not possible
 ; (int->signed-bits -3) -> '(1 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1)
-; (int->signed-bits 4096) -> #f
+; (int->signed-bits 32768) -> #f
 (define (int->signed-bits n)
   (cond
-    [(> n 4095)
+    [(> n 32768)
      #f]
-    [(< n -4095)
+    [(< n -32768)
      #f]
     [(< n 0)
      (cons 1 (int->bits-width (* -1 n) 15))]
@@ -629,7 +629,7 @@ hello world
   (display "output = ")
   (display (signed-bits->int (entry-value (list-ref (conf-cpu config) 0))))
   (newline)
-  empty)
+  config)
 
 ;************************************************************
 ; ** problem 6 ** (10 points)
@@ -1061,13 +1061,13 @@ hello world
      (define newconfig (do-jump address config))
      newconfig]
     [(equal? 8 instruct-num)
-     (define newconfig (do-skipzero address config))
+     (define newconfig (do-skipzero config))
      newconfig]
     [(equal? 9 instruct-num)
-     (define newconfig (do-skippos address config))
+     (define newconfig (do-skippos config))
      newconfig]
     [(equal? 10 instruct-num)
-     (define newconfig (do-skiperr address config))
+     (define newconfig (do-skiperr config))
      newconfig]
     [(equal? 11 instruct-num)
      (define newconfig (do-loadi address config))
@@ -1469,10 +1469,36 @@ hello world
 ;************************************************************
 
 (define (simulate n config)
-  empty)
+  (define next-config1 (next-config config))
+  (cond
+    [(equal? n 0)
+     (list config)]
+    [(equal? config next-config1)
+     (list config)]
+    [else
+     (cons config (simulate (- n 1) next-config1))]))
+     
+; halt, load, store, add, sub, input, output, jump
+; skipzero, skippos, skiperr, loadi, storei, shift, and, xor.
 
 (define encrypt-prog
-  empty)
+  '(
+    (input 0)
+    (skippos 0)
+    (jump 10)
+    (store 11)
+    (input 0)
+    (skippos 0)
+    (jump 10)
+    (xor 11)
+    (output 0)
+    (jump 4)
+    (halt 0)
+    ))
+
+(define (test-prog prog)
+  (simulate 100 (init-config (assemble prog))))
+
 
 ;************************************************************
 ; ** problem 12 ** (5 points)
@@ -1502,7 +1528,41 @@ hello world
 ;************************************************************
 
 (define reverse-prog
-  empty)
+  '(
+    (input 0) ; 0
+    (skipzero 0)
+    (jump 4)
+    (jump 12)
+    (store 25) ; 4
+    (load 4)
+    (add 21)
+    (store 4)
+    (load 12) ; 8
+    (add 21)
+    (store 12)
+    (jump 0) 
+    (load 24) ; 12
+    (skipzero 0)
+    (jump 16)
+    (halt 0)
+    (output 0) ; 16
+    (load 12)
+    (sub 21)
+    (store 12) 
+    (jump 12) ; 20
+    (data 1)
+    ))
+
+(define my-prog
+  '(
+    (input 0)
+    (skipzero 0)
+    (jump 4)
+    (halt 0)
+    (store 7)
+    (output 0)
+    (halt 0)
+    ))
 
 ; ********************************************************
 ; ** problem 13 ** (5 points)
@@ -1526,8 +1586,20 @@ hello world
 ; input = 3
 ; output = 120
 
+; halt, load, store, add, sub, input, output, jump
+; skipzero, skippos, skiperr, loadi, storei, shift, and, xor.
+
 (define power-prog
-  empty)
+  '(
+    (input 0) ; 0
+    (store 10)
+    (input 0)
+    (store 11)
+    (load 10) ; 4
+    (shift 11)
+    (output 0)
+    (halt 0)
+    ))
 
 ; ********************************************************
 ; ********  testing, testing. 1, 2, 3 ....

@@ -444,11 +444,29 @@
 ; (generate-string-from-cfg grammar-anbn) => '()
 ;************************************************************
 
+; (struct cfg (terminals nonterminals start-symbol rules)
+; (struct rule (lhs rhs)
+
 (define (generate-parse-tree-from-cfg grammar)
-  "generate-parse-tree-from-cfg not defined yet")
+  (cond
+    [(ormap (lambda (terminal1)
+              (equal? terminal1 (cfg-start-symbol grammar)))
+            (cfg-terminals grammar))
+     (leaf (cfg-start-symbol grammar))]
+    [else 
+     (define selected-rule (pick (foldr (lambda (rule1 lst)
+                                          (if (equal? (cfg-start-symbol grammar) (rule-lhs rule1))
+                                              (cons rule1 lst)
+                                              lst))
+                                        '()
+                                        (cfg-rules grammar))))
+     (node (cfg-start-symbol grammar) (foldr (lambda (x lst)
+                                               (cons (generate-parse-tree-from-cfg (cfg (cfg-terminals grammar) (cfg-nonterminals grammar) x (cfg-rules grammar))) lst))
+                                             '()
+                                             (rule-rhs selected-rule)))]))
 
 (define (generate-string-from-cfg grammar)
-  "generate-string-from-cfg not defined yet")
+  (list-leaf-labels (generate-parse-tree-from-cfg grammar)))
 
 ;************************************************************
 ; ** problem 7 ** (10 points)
@@ -456,8 +474,40 @@
 ; the CFG grammar-mcd.
 ;************************************************************
 
+
+; (struct dfa (alphabet states start-state accepting-states transitions) #:transparent)
+
+; where alphabet is a list of Racket symbols
+; states is a list of Racket symbols
+; start-state is one of the elements of states
+; accepting-states is a list containing some of the elements of states
+; and transitions is a table whose entries
+;    have a key that is a list containing a state and a member of the alphabet
+;         a value that is a state
+
 (define dfa-mcd
-  (dfa "dfa-mcd" "is" "not" "defined" "yet"))
+  (dfa '(a the mouse cat dog it slept swam chased evaded dreamed believed that)
+       '(start )
+       'start
+       '(end)
+       (list
+        (entry '(start it) 'verb)
+        (entry '(start a) 'animal)
+        (entry '(start the) 'animal)
+        (entry '(animal mouse) 'verb)
+        (entry '(animal cat) 'verb)
+        (entry '(animal dog) 'verb)
+        (entry '(verb slept) 'end)
+        (entry '(verb swam) 'end)
+        (entry '(verb chased) 'pronoun)
+        (entry '(pronoun it) 'end)
+        (entry '(pronoun a) 'animal2)
+        (entry '(pronoun the) 'animal2)
+        (entry '(animal2 mouse) 'end)
+        (entry '(animal2 cat) 'end)
+        (entry '(animal2 dog) 'end)
+        (entry '(verb believed) 'start)
+        (entry '(verb dreamed) 'start))))
 
 ;************************************************************
 ; ** problem 8 ** (10 points)

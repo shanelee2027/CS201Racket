@@ -500,14 +500,16 @@
         (entry '(verb slept) 'end)
         (entry '(verb swam) 'end)
         (entry '(verb chased) 'pronoun)
+        (entry '(verb evaded) 'pronoun)
         (entry '(pronoun it) 'end)
         (entry '(pronoun a) 'animal2)
         (entry '(pronoun the) 'animal2)
         (entry '(animal2 mouse) 'end)
         (entry '(animal2 cat) 'end)
         (entry '(animal2 dog) 'end)
-        (entry '(verb believed) 'start)
-        (entry '(verb dreamed) 'start))))
+        (entry '(verb believed) 'that)
+        (entry '(verb dreamed) 'that)
+        (entry '(that that) 'start))))
 
 ;************************************************************
 ; ** problem 8 ** (10 points)
@@ -515,8 +517,45 @@
 ; the CFG grammar-mcd.
 ;************************************************************
 
+
+; (struct concat (arg1 arg2) #:transparent)
+; (struct either (arg1 arg2) #:transparent)
+; (struct repeat (arg1) #:transparent)
+
+; A String is a list of Racket symbols.
+
+; A Regular Expression is defined recursively as follows:
+; (1) a String is a Regular Expression,
+; (2) If exp1 and exp2 are Regular Expressions, then so are
+; (concat exp1 exp2), (either exp1 exp2) and (repeat exp1).
+; These correspond to concatenation, union ("or"), and Kleene star
+; for regular expressions.
+
+; exp for either "it" or "a/the mouse/cat/dog"
+(define exp-noun
+  (either '(it)
+          (concat (either '(a) '(the))
+                  (either (either '(mouse) '(cat)) '(dog)))))
+
 (define exp-mcd
-  "exp-mcd not defined yet")
+  (either (concat exp-noun
+                  (either (either '(slept)
+                                  '(swam))
+                          (concat (either '(chased)
+                                          '(evaded))
+                                  exp-noun)))
+          (concat exp-noun
+                  (concat (repeat (concat (concat (either '(believed)
+                                                          '(dreamed))
+                                                  '(that))
+                                          exp-noun))
+                          (either (either '(slept)
+                                          '(swam))
+                                  (concat (either '(chased)
+                                                  '(evaded))
+                                          exp-noun))))))
+               
+          
   
 ;************************************************************
 ; ** problem 9 ** (15 points)
@@ -527,8 +566,38 @@
 ; (Please do more than just copy grammar-mcd with a few changes.)
 ;************************************************************
 
+; (struct cfg (terminals nonterminals start-symbol rules) #:transparent)
+
 (define my-cfg
-  (cfg "my-cfg" "not" "defined" "yet"))
+  (cfg '(giraffe tiger fish it large tasty depressed zesty hilarious handsome purple the a hates likes that)
+       '(start subject adjective TheA verb HateLike)
+       'start
+       (list
+        (rule 'start '(subject verb))
+        (rule 'subject '(TheA adjective giraffe))
+        (rule 'subject '(TheA adjective tiger))
+        (rule 'subject '(TheA adjective fish))
+        (rule 'subject '(it))
+        (rule 'adjective '(large))
+        (rule 'adjective '(tasty))
+        (rule 'adjective '(depressed))
+        (rule 'adjective '(zesty))
+        (rule 'adjective '(hilarious))
+        (rule 'adjective '(handsome))
+        (rule 'adjective '(purple))
+        (rule 'adjective '(adjective large))
+        (rule 'adjective '(adjective tasty))
+        (rule 'adjective '(adjective depressed))
+        (rule 'adjective '(adjective zesty))
+        (rule 'adjective '(adjective hilarious))
+        (rule 'adjective '(adjective handsome))
+        (rule 'adjective '(adjective purple))
+        (rule 'TheA '(the))
+        (rule 'TheA '(a))
+        (rule 'verb '(HateLike subject))
+        (rule 'verb '(HateLike that start))
+        (rule 'HateLike '(hates))
+        (rule 'HateLike '(likes)))))
 
 ;************************************************************
 
